@@ -1,7 +1,34 @@
-import BottomNav from "@/components/BottomNav";
-import { ShareIcon } from "@/components/icons";
+export const dynamic = "force-dynamic";
 
-export default function PerfilPage() {
+import { redirect } from "next/navigation";
+import BottomNav from "@/components/BottomNav";
+import SetupNotice from "@/components/SetupNotice";
+import ShareSummaryButton from "@/components/ShareSummaryButton";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { createClient } from "@/lib/supabase/server";
+import { getWeekSummary } from "@/lib/data";
+
+const RANGE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long" });
+
+export default async function PerfilPage() {
+  if (!isSupabaseConfigured()) return <SetupNotice />;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/entrar");
+
+  const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).single();
+  const summary = await getWeekSummary(supabase, user.id);
+
+  const rangeLabel = `${RANGE_FMT.format(new Date(summary.sinceISO))} – ${RANGE_FMT.format(new Date())}`;
+  const initial = (profile?.name || user.email || "?").trim().charAt(0).toUpperCase();
+  const hasHistory = summary.daysWithPlan > 0;
+
+  const ringCircumference = 188.5;
+  const ringOffset = ringCircumference * (1 - summary.consistency / 100);
+
   return (
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col bg-ink-bg text-on-ink relative overflow-hidden">
       <div className="absolute -top-24 -right-20 w-72 h-72 rounded-full bg-accent opacity-20 blur-[2px] pointer-events-none" />
@@ -16,23 +43,28 @@ export default function PerfilPage() {
         <div className="mx-5 mt-5 bg-ink-bg-2 rounded-[28px] border border-white/10 p-6 relative flex-shrink-0">
           <div className="flex items-center gap-3 mb-5.5">
             <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-[15px] font-bold text-accent-ink">
-              M
+              {initial}
             </div>
             <div>
-              <div className="text-sm font-semibold">Marina Alves</div>
-              <div className="text-xs text-on-ink-soft">18 – 24 de maio</div>
+              <div className="text-sm font-semibold">{profile?.name || user.email}</div>
+              <div className="text-xs text-on-ink-soft">{rangeLabel}</div>
             </div>
           </div>
 
-          <div className="font-serif italic text-[34px] leading-[1.15] mb-5.5">
-            Seis dias de ritmo, uma semana inteira de prova.
-          </div>
+          {hasHistory ? (
+            <div className="font-serif italic text-[34px] leading-[1.15] mb-5.5">
+              {summary.workoutsCompleted} de {summary.daysWithPlan} treinos concluídos essa semana.
+            </div>
+          ) : (
+            <div className="font-serif italic text-[28px] leading-[1.25] mb-5.5 text-on-ink-soft">
+              Sua semana começa agora. Volte depois do primeiro treino.
+            </div>
+          )}
 
           <div className="flex gap-2.5 mb-5.5">
             {[
-              { value: "6/6", label: "treinos feitos" },
-              { value: "91%", label: "consistência" },
-              { value: "3", label: "recordes pessoais" },
+              { value: `${summary.workoutsCompleted}/${summary.daysWithPlan}`, label: "treinos feitos" },
+              { value: `${summary.consistency}%`, label: "consistência" },
             ].map((stat) => (
               <div key={stat.label} className="flex-1 bg-white/5 rounded-2xl p-3.5">
                 <div className="font-serif italic text-[28px] text-accent">{stat.value}</div>
@@ -52,14 +84,14 @@ export default function PerfilPage() {
                 stroke="var(--accent)"
                 strokeWidth={7}
                 strokeLinecap="round"
-                strokeDasharray="188.5"
-                strokeDashoffset="18.8"
+                strokeDasharray={ringCircumference}
+                strokeDashoffset={ringOffset}
                 transform="rotate(-90 36 36)"
               />
             </svg>
             <div>
-              <div className="text-xs text-on-ink-soft">Meta semanal</div>
-              <div className="text-lg font-semibold mt-0.5">90% concluída</div>
+              <div className="text-xs text-on-ink-soft">Consistência da semana</div>
+              <div className="text-lg font-semibold mt-0.5">{summary.consistency}% concluída</div>
             </div>
           </div>
 
@@ -72,10 +104,10 @@ export default function PerfilPage() {
         <div className="flex-1" />
 
         <div className="px-5 pb-7 pt-4.5">
-          <button className="w-full h-13 rounded-full bg-accent text-accent-ink flex items-center justify-center gap-2.5 font-semibold text-[15px]">
-            <ShareIcon size={17} />
-            Compartilhar resumo
-          </button>
+          <ShareSummaryButton
+            disabled={!hasHistory}
+            text={`${summary.workoutsCompleted}/${summary.daysWithPlan} treinos concluídos e ${summary.consistency}% de consistência essa semana no Pulso.`}
+          />
         </div>
       </main>
 

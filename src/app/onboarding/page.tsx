@@ -75,7 +75,7 @@ export default function OnboardingPage() {
 
       <div className="px-6 pb-8 pt-2">
         <button
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push(`/cadastro?goal=${picked}`)}
           className="w-full h-13 rounded-full bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors"
         >
           Continuar

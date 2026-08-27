@@ -56,7 +56,7 @@ export default function LandingPage() {
           <a href="#prova">Comunidade</a>
         </nav>
         <div className="flex items-center gap-3 md:gap-4">
-          <Link href="/dashboard" className="text-[15px] font-semibold hidden sm:block">
+          <Link href="/entrar" className="text-[15px] font-semibold hidden sm:block">
             Entrar
           </Link>
           <Link
@@ -179,19 +179,12 @@ export default function LandingPage() {
       {/* FINAL CTA */}
       <section className="px-6 md:px-16 py-20 md:py-24 text-center flex flex-col items-center gap-7">
         <h2 className="font-serif text-4xl md:text-[44px] max-w-xl">Seu ritmo começa hoje.</h2>
-        <form className="flex flex-col sm:flex-row gap-3 w-full max-w-md sm:max-w-none justify-center">
-          <input
-            type="email"
-            placeholder="seu.email@exemplo.com"
-            className="h-13 w-full sm:w-80 rounded-full border border-line px-6 text-[15px] bg-card text-ink placeholder:text-ink-faint"
-          />
-          <button
-            type="submit"
-            className="h-13 px-7 rounded-full bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors"
-          >
-            Criar minha conta
-          </button>
-        </form>
+        <Link
+          href="/onboarding"
+          className="h-13 px-8 inline-flex items-center justify-center rounded-full bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors"
+        >
+          Criar minha conta
+        </Link>
       </section>
 
       {/* FOOTER */}

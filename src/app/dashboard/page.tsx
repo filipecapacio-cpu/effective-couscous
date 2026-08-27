@@ -1,21 +1,103 @@
-import BottomNav from "@/components/BottomNav";
-import { BellIcon, CheckIcon, FlameIcon, PlayIcon } from "@/components/icons";
+export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import BottomNav from "@/components/BottomNav";
+import SetupNotice from "@/components/SetupNotice";
+import { CheckIcon, FlameIcon, LogOutIcon, PlayIcon } from "@/components/icons";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { createClient } from "@/lib/supabase/server";
+import { getStreak, todayISO } from "@/lib/data";
+import { completeOnboarding, ensureTodayPlan } from "@/app/actions/plan";
+import { consumePendingGoal, signOut } from "@/app/actions/auth";
+import type { Goal } from "@/lib/plan";
+
+const WEEKDAY_LONG = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "long",
+  day: "2-digit",
+  month: "long",
+});
+
+export default async function DashboardPage() {
+  if (!isSupabaseConfigured()) return <SetupNotice />;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/entrar");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name, goal")
+    .eq("id", user.id)
+    .single();
+
+  const goal = (profile?.goal as Goal | null) ?? null;
+  const pendingGoal = await consumePendingGoal();
+  if (pendingGoal && !goal) {
+    await completeOnboarding(user.id, pendingGoal);
+  } else {
+    await ensureTodayPlan(user.id, goal);
+  }
+
+  const date = todayISO();
+
+  const { data: workout } = await supabase
+    .from("workouts")
+    .select("id, title, duration_min")
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .maybeSingle();
+
+  const { data: exercises } = workout
+    ? await supabase
+        .from("workout_exercises")
+        .select("id, done")
+        .eq("workout_id", workout.id)
+        .order("position")
+    : { data: [] as { id: string; done: boolean }[] };
+
+  const { data: meals } = await supabase
+    .from("meals")
+    .select("id, name, kcal, done")
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .order("position");
+
+  const streak = await getStreak(supabase, user.id);
+
+  const exList = exercises ?? [];
+  const mealList = meals ?? [];
+  const doneExercises = exList.filter((e) => e.done).length;
+  const doneMeals = mealList.filter((m) => m.done).length;
+  const totalSteps = exList.length + mealList.length;
+  const doneSteps = doneExercises + doneMeals;
+  const progressPct = totalSteps > 0 ? Math.round((doneSteps / totalSteps) * 100) : 0;
+
+  const firstName = (profile?.name || user.email || "").split(" ")[0].split("@")[0];
+  const dateLabel = WEEKDAY_LONG.format(new Date());
+
   return (
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col">
       <header className="px-6 pt-6 pb-1.5 flex items-center justify-between">
         <div>
-          <div className="text-[13px] text-ink-soft">Bom dia, Marina</div>
-          <div className="font-serif italic text-2xl mt-0.5">Sexta, 24 de maio</div>
+          <div className="text-[13px] text-ink-soft">Bom dia{firstName ? `, ${firstName}` : ""}</div>
+          <div className="font-serif italic text-2xl mt-0.5 capitalize">{dateLabel}</div>
         </div>
-        <div className="w-11 h-11 rounded-full bg-card flex items-center justify-center flex-shrink-0">
-          <BellIcon size={20} />
-        </div>
+        <form action={signOut}>
+          <button
+            type="submit"
+            aria-label="Sair"
+            className="w-11 h-11 rounded-full bg-card flex items-center justify-center flex-shrink-0 text-ink-soft"
+          >
+            <LogOutIcon size={19} />
+          </button>
+        </form>
       </header>
 
       <main className="flex-1 px-6 pt-4.5 flex flex-col gap-4">
-        {/* streak + recovery */}
+        {/* streak + progress */}
         <div className="flex gap-3">
           <div className="flex-1 bg-ink-bg rounded-[20px] p-4.5 flex flex-col justify-between h-[132px]">
             <div className="flex items-center justify-between">
@@ -23,60 +105,61 @@ export default function DashboardPage() {
               <FlameIcon size={16} className="text-accent" />
             </div>
             <div className="font-serif italic text-on-ink text-4xl">
-              7 <span className="font-sans not-italic text-[15px] text-on-ink-soft">dias</span>
+              {streak} <span className="font-sans not-italic text-[15px] text-on-ink-soft">dias</span>
             </div>
           </div>
           <div className="flex-1 bg-card rounded-[20px] p-4.5 flex flex-col justify-between h-[132px]">
-            <span className="text-ink-soft text-xs">Recuperação</span>
-            <div className="flex items-end gap-2">
-              <div className="font-serif italic text-4xl">82%</div>
-              <div className="text-xs text-accent font-semibold mb-1.5">bom</div>
-            </div>
+            <span className="text-ink-soft text-xs">Progresso de hoje</span>
+            <div className="font-serif italic text-4xl">{progressPct}%</div>
           </div>
         </div>
 
         {/* today's training */}
-        <div className="bg-ink rounded-[22px] p-5 text-paper flex flex-col gap-3.5">
+        <Link href="/plano" className="bg-ink rounded-[22px] p-5 text-paper flex flex-col gap-3.5">
           <div className="flex items-center justify-between">
             <span className="text-xs text-on-ink-soft uppercase tracking-[0.08em]">Treino de hoje</span>
-            <span className="text-xs text-on-ink-soft">45 min</span>
+            {workout?.duration_min && (
+              <span className="text-xs text-on-ink-soft">{workout.duration_min} min</span>
+            )}
           </div>
-          <div className="font-serif italic text-2xl">Upper Body · Força</div>
+          <div className="font-serif italic text-2xl">{workout?.title ?? "Sem treino hoje"}</div>
           <div className="flex items-center justify-between">
             <div className="flex gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-accent" />
-              <div className="w-2 h-2 rounded-full bg-white/25" />
-              <div className="w-2 h-2 rounded-full bg-white/25" />
+              {exList.map((e) => (
+                <div
+                  key={e.id}
+                  className={`w-2 h-2 rounded-full ${e.done ? "bg-accent" : "bg-white/25"}`}
+                />
+              ))}
             </div>
             <div className="w-9.5 h-9.5 rounded-full bg-accent flex items-center justify-center">
               <PlayIcon size={15} className="text-accent-ink" />
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* meals */}
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[15px] font-semibold">Refeições</span>
-            <span className="text-[13px] text-ink-soft">2 de 4</span>
+            <span className="text-[13px] text-ink-soft">
+              {doneMeals} de {mealList.length}
+            </span>
           </div>
           <div className="flex flex-col gap-2">
-            {[
-              { label: "Café da manhã", kcal: "420 kcal", done: true },
-              { label: "Almoço", kcal: "680 kcal", done: true },
-            ].map((meal) => (
-              <div key={meal.label} className="flex items-center gap-3 bg-card rounded-2xl px-3.5 py-3">
-                <div className="w-5.5 h-5.5 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
-                  <CheckIcon size={12} className="text-accent-ink" />
+            {mealList.map((meal) => (
+              <div key={meal.id} className="flex items-center gap-3 bg-card rounded-2xl px-3.5 py-3">
+                <div
+                  className={`w-5.5 h-5.5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    meal.done ? "bg-accent" : "border-[1.5px] border-line"
+                  }`}
+                >
+                  {meal.done && <CheckIcon size={12} className="text-accent-ink" />}
                 </div>
-                <span className="text-sm flex-1">{meal.label}</span>
-                <span className="text-xs text-ink-faint">{meal.kcal}</span>
+                <span className="text-sm flex-1">{meal.name}</span>
+                {meal.kcal && <span className="text-xs text-ink-faint">{meal.kcal} kcal</span>}
               </div>
             ))}
-            <div className="flex items-center gap-3 rounded-2xl px-3.5 py-3 border-[1.5px] border-dashed border-line">
-              <div className="w-5.5 h-5.5 rounded-full border-[1.5px] border-line flex-shrink-0" />
-              <span className="text-sm flex-1 text-ink-soft">Lanche da tarde</span>
-            </div>
           </div>
         </div>
       </main>
