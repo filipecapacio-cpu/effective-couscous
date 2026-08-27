@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pulso
 
-## Getting Started
+Alta performance que cabe na rotina. Treino, nutrição e recuperação em um
+só lugar, pensado pra quem também estuda ou trabalha.
 
-First, run the development server:
+Stack: [Next.js](https://nextjs.org) (App Router) + TypeScript + Tailwind
+CSS v4, com [Supabase](https://supabase.com) para autenticação e dados.
+
+## Rodando localmente
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000). Sem o backend
+configurado (próxima seção), a landing page e o onboarding funcionam
+normalmente — as telas que dependem de conta (`/dashboard`, `/plano`,
+`/perfil`, `/entrar`, `/cadastro`) mostram um aviso explicando o que falta
+configurar, em vez de quebrar.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configurando o backend (Supabase)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Crie um projeto grátis em [supabase.com](https://supabase.com).
+2. No **SQL Editor** do projeto, rode o conteúdo de
+   [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql).
+   Isso cria as tabelas (`profiles`, `workouts`, `workout_exercises`,
+   `meals`) com Row Level Security — cada pessoa só acessa os próprios
+   dados.
+3. Em **Project Settings → API**, copie a **Project URL** e a chave
+   **anon/public**.
+4. Copie `.env.local.example` para `.env.local` e preencha os dois
+   valores:
 
-## Learn More
+   ```bash
+   cp .env.local.example .env.local
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+5. Reinicie o servidor (`npm run dev`).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+A partir daí, cadastro/login, o plano do dia e o resumo semanal passam a
+persistir de verdade por usuário.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> Por padrão, projetos novos no Supabase exigem confirmação por e-mail no
+> cadastro. Pra testar mais rápido em desenvolvimento, isso pode ser
+> desligado em **Authentication → Providers → Email → Confirm email**.
 
-## Deploy on Vercel
+## Estrutura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `src/app/` — páginas (App Router): landing (`/`), `onboarding`,
+  `cadastro`, `entrar`, `dashboard`, `plano`, `perfil`.
+- `src/app/actions/` — Server Actions (auth e leitura/escrita do plano).
+- `src/lib/supabase/` — clientes Supabase (browser, server, middleware) e
+  o helper `isSupabaseConfigured()`.
+- `src/lib/plan.ts` / `src/lib/data.ts` — conteúdo do plano inicial e
+  cálculo de sequência/consistência.
+- `supabase/migrations/` — schema do banco.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+- `npm run dev` — servidor de desenvolvimento.
+- `npm run build` — build de produção.
+- `npm run lint` — ESLint.
