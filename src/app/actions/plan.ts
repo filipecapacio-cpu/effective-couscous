@@ -3,22 +3,53 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { STARTER_EXERCISES, STARTER_MEALS, starterWorkoutTitle, type Goal } from "@/lib/plan";
+import { dayPlanFor, type WeekPlan } from "@/lib/ai-plan";
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
+
+type DayContent = {
+  title: string;
+  durationMin: number | null;
+  exercises: { name: string; detail: string | null }[];
+  meals: { name: string; detail: string | null; kcal: number | null }[];
+};
+
+function starterContent(goal: Goal | null): DayContent {
+  return {
+    title: starterWorkoutTitle(goal),
+    durationMin: 40,
+    exercises: STARTER_EXERCISES,
+    meals: STARTER_MEALS.map((name) => ({ name, detail: null, kcal: null })),
+  };
+}
+
+function aiContent(plan: WeekPlan, date: string): DayContent {
+  const day = dayPlanFor(plan, date);
+  return {
+    title: day.restDay ? "Descanso" : day.workoutTitle,
+    durationMin: day.restDay ? null : day.durationMin,
+    exercises: day.restDay ? [] : day.exercises,
+    meals: day.meals,
+  };
+}
 
 /** Garante que existe um treino e refeições planejadas para hoje. Idempotente. */
 export async function ensureTodayPlan(userId: string, goal: Goal | null) {
   const supabase = await createClient();
   const date = todayISO();
 
-  // As duas checagens de existência são independentes — roda em paralelo
-  // pra não pagar duas viagens de rede em série.
+  // As três checagens são independentes — roda em paralelo pra não pagar
+  // viagens de rede em série.
   const [
     { data: existingWorkout, error: existingWorkoutError },
     { data: existingMeals, error: existingMealsError },
+    { data: aiPlanRow },
   ] = await Promise.all([
     supabase.from("workouts").select("id").eq("user_id", userId).eq("date", date).maybeSingle(),
     supabase.from("meals").select("id").eq("user_id", userId).eq("date", date).limit(1),
+    supabase.from("ai_plans").select("plan").eq("user_id", userId).maybeSingle(),
   ]);
 
   if (existingWorkoutError) {
@@ -28,42 +59,102 @@ export async function ensureTodayPlan(userId: string, goal: Goal | null) {
     console.error("[ensureTodayPlan] failed to read today's meals:", existingMealsError);
   }
 
-  const seedMeals = async () => {
-    if (existingMeals && existingMeals.length > 0) return;
-    const { error: mealsError } = await supabase.from("meals").insert(
-      STARTER_MEALS.map((name, i) => ({ user_id: userId, date, name, position: i }))
+  if (existingWorkout && existingMeals && existingMeals.length > 0) return;
+
+  const content = aiPlanRow?.plan
+    ? aiContent(aiPlanRow.plan as WeekPlan, date)
+    : starterContent(goal);
+
+  await Promise.all([
+    existingWorkout
+      ? Promise.resolve()
+      : insertDayContentWorkoutOnly(supabase, userId, date, content),
+    existingMeals && existingMeals.length > 0
+      ? Promise.resolve()
+      : insertDayContentMealsOnly(supabase, userId, date, content),
+  ]);
+}
+
+async function insertDayContentWorkoutOnly(
+  supabase: Supabase,
+  userId: string,
+  date: string,
+  content: DayContent
+) {
+  const { data: workout, error } = await supabase
+    .from("workouts")
+    .insert({ user_id: userId, date, title: content.title, duration_min: content.durationMin })
+    .select("id")
+    .single();
+  if (error) {
+    console.error("[ensureTodayPlan] failed to insert workout:", error);
+    return;
+  }
+  if (workout && content.exercises.length > 0) {
+    const { error: exercisesError } = await supabase.from("workout_exercises").insert(
+      content.exercises.map((ex, i) => ({
+        workout_id: workout.id,
+        name: ex.name,
+        detail: ex.detail,
+        position: i,
+      }))
     );
-    if (mealsError) {
-      console.error("[ensureTodayPlan] failed to insert meals:", mealsError);
+    if (exercisesError) {
+      console.error("[ensureTodayPlan] failed to insert workout_exercises:", exercisesError);
     }
-  };
+  }
+}
 
-  const seedWorkout = async () => {
-    if (existingWorkout) return;
-    const { data: workout, error } = await supabase
-      .from("workouts")
-      .insert({ user_id: userId, date, title: starterWorkoutTitle(goal), duration_min: 40 })
-      .select("id")
-      .single();
+async function insertDayContentMealsOnly(
+  supabase: Supabase,
+  userId: string,
+  date: string,
+  content: DayContent
+) {
+  if (content.meals.length === 0) return;
+  const { error } = await supabase.from("meals").insert(
+    content.meals.map((m, i) => ({
+      user_id: userId,
+      date,
+      name: m.name,
+      detail: m.detail,
+      kcal: m.kcal,
+      position: i,
+    }))
+  );
+  if (error) {
+    console.error("[ensureTodayPlan] failed to insert meals:", error);
+  }
+}
 
-    if (error) {
-      console.error("[ensureTodayPlan] failed to insert workout:", error);
-    } else if (workout) {
-      const { error: exercisesError } = await supabase.from("workout_exercises").insert(
-        STARTER_EXERCISES.map((ex, i) => ({
-          workout_id: workout.id,
-          name: ex.name,
-          detail: ex.detail,
-          position: i,
-        }))
-      );
-      if (exercisesError) {
-        console.error("[ensureTodayPlan] failed to insert workout_exercises:", exercisesError);
-      }
-    }
-  };
+/**
+ * Substitui de vez o treino/refeições de hoje pelo conteúdo do plano de IA
+ * recém-gerado — ao contrário de ensureTodayPlan, isso é intencional e
+ * sobrescreve o que já existir (chamado só logo após gerar um plano novo).
+ */
+export async function replaceTodayPlanWithAiPlan(userId: string, plan: WeekPlan) {
+  const supabase = await createClient();
+  const date = todayISO();
 
-  await Promise.all([seedWorkout(), seedMeals()]);
+  const { data: existingWorkout } = await supabase
+    .from("workouts")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("date", date)
+    .maybeSingle();
+
+  await Promise.all([
+    existingWorkout
+      ? supabase.from("workouts").delete().eq("id", existingWorkout.id)
+      : Promise.resolve(),
+    supabase.from("meals").delete().eq("user_id", userId).eq("date", date),
+  ]);
+
+  const content = aiContent(plan, date);
+  await Promise.all([
+    insertDayContentWorkoutOnly(supabase, userId, date, content),
+    insertDayContentMealsOnly(supabase, userId, date, content),
+  ]);
 }
 
 /** Aplica o objetivo escolhido no onboarding assim que a conta é confirmada. */

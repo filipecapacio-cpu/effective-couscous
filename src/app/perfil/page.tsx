@@ -1,12 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
 import ShareSummaryButton from "@/components/ShareSummaryButton";
 import ProfileEditForm from "@/components/ProfileEditForm";
 import Heatmap from "@/components/Heatmap";
+import { SparkleIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isAnthropicConfigured } from "@/lib/anthropic";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthHeatmap, getWeekSummary } from "@/lib/data";
 
@@ -115,6 +118,23 @@ export default async function PerfilPage() {
           </div>
           <Heatmap days={heatmap} />
         </div>
+
+        {isAnthropicConfigured() && (
+          <div className="px-5 pt-6">
+            <Link
+              href="/anamnese"
+              className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10"
+            >
+              <SparkleIcon size={18} className="text-accent flex-shrink-0" />
+              <div className="flex-1">
+                <div className="text-[14px] font-semibold">Anamnese e plano com IA</div>
+                <div className="text-[12.5px] text-on-ink-soft mt-0.5">
+                  Editar suas respostas e gerar um novo plano personalizado
+                </div>
+              </div>
+            </Link>
+          </div>
+        )}
 
         <div className="flex-1" />
 

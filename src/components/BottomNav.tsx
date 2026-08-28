@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardIcon, HomeIcon, UserIcon } from "@/components/icons";
+import { ClipboardIcon, HomeIcon, SparkleIcon, UserIcon } from "@/components/icons";
 
 const items = [
   { href: "/dashboard", label: "Início", Icon: HomeIcon },
   { href: "/plano", label: "Plano", Icon: ClipboardIcon },
+  { href: "/assistente", label: "IA", Icon: SparkleIcon },
   { href: "/perfil", label: "Perfil", Icon: UserIcon },
 ] as const;
 

@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
-import { CheckIcon, FlameIcon, LogOutIcon, PlayIcon } from "@/components/icons";
+import { CheckIcon, FlameIcon, LogOutIcon, PlayIcon, SparkleIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isAnthropicConfigured } from "@/lib/anthropic";
 import { createClient } from "@/lib/supabase/server";
 import { getStreak, todayISO } from "@/lib/data";
 import { completeOnboarding, ensureTodayPlan } from "@/app/actions/plan";
@@ -42,8 +43,10 @@ export default async function DashboardPage() {
 
   const date = todayISO();
 
-  // Treino, refeições e sequência também são independentes entre si.
-  const [{ data: workout }, { data: meals }, streak] = await Promise.all([
+  const showAiCta = isAnthropicConfigured();
+
+  // Treino, refeições, sequência e anamnese também são independentes entre si.
+  const [{ data: workout }, { data: meals }, streak, hasAnamnesis] = await Promise.all([
     supabase
       .from("workouts")
       .select("id, title, duration_min")
@@ -57,6 +60,14 @@ export default async function DashboardPage() {
       .eq("date", date)
       .order("position"),
     getStreak(supabase, user.id),
+    showAiCta
+      ? supabase
+          .from("anamneses")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle()
+          .then(({ data }) => Boolean(data))
+      : Promise.resolve(true),
   ]);
 
   const { data: exercises } = workout
@@ -97,6 +108,21 @@ export default async function DashboardPage() {
       </header>
 
       <main className="flex-1 px-6 pt-4.5 flex flex-col gap-4">
+        {showAiCta && !hasAnamnesis && (
+          <Link
+            href="/anamnese"
+            className="flex items-center gap-3 p-4 rounded-2xl bg-accent-soft"
+          >
+            <SparkleIcon size={20} className="text-accent flex-shrink-0" />
+            <div className="flex-1">
+              <div className="text-[14px] font-semibold">Gere seu plano com IA</div>
+              <div className="text-[12.5px] text-ink-soft mt-0.5">
+                Responda uma anamnese rápida e receba treino e dieta personalizados.
+              </div>
+            </div>
+          </Link>
+        )}
+
         {/* streak + progress */}
         <div className="flex gap-3">
           <div className="flex-1 bg-ink-bg rounded-[20px] p-4.5 flex flex-col justify-between h-[132px]">
