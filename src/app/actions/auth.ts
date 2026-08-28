@@ -75,7 +75,15 @@ export async function signOut() {
 export async function consumePendingGoal(): Promise<Goal | null> {
   const cookieStore = await cookies();
   const value = cookieStore.get(PENDING_GOAL_COOKIE)?.value ?? null;
-  if (value) cookieStore.delete(PENDING_GOAL_COOKIE);
+  if (value) {
+    try {
+      cookieStore.delete(PENDING_GOAL_COOKIE);
+    } catch {
+      // Chamado a partir da renderização de um Server Component, que não
+      // pode escrever cookies — sem problema, o cookie expira sozinho e
+      // completeOnboarding() é idempotente se essa leitura se repetir.
+    }
+  }
   return value as Goal | null;
 }
 
