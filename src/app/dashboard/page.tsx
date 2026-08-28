@@ -27,14 +27,13 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, goal")
-    .eq("id", user.id)
-    .single();
+  // Perfil e o cookie de onboarding pendente não dependem um do outro.
+  const [{ data: profile }, pendingGoal] = await Promise.all([
+    supabase.from("profiles").select("name, goal").eq("id", user.id).single(),
+    consumePendingGoal(),
+  ]);
 
   const goal = (profile?.goal as Goal | null) ?? null;
-  const pendingGoal = await consumePendingGoal();
   if (pendingGoal && !goal) {
     await completeOnboarding(user.id, pendingGoal);
   } else {
@@ -43,12 +42,22 @@ export default async function DashboardPage() {
 
   const date = todayISO();
 
-  const { data: workout } = await supabase
-    .from("workouts")
-    .select("id, title, duration_min")
-    .eq("user_id", user.id)
-    .eq("date", date)
-    .maybeSingle();
+  // Treino, refeições e sequência também são independentes entre si.
+  const [{ data: workout }, { data: meals }, streak] = await Promise.all([
+    supabase
+      .from("workouts")
+      .select("id, title, duration_min")
+      .eq("user_id", user.id)
+      .eq("date", date)
+      .maybeSingle(),
+    supabase
+      .from("meals")
+      .select("id, name, kcal, done")
+      .eq("user_id", user.id)
+      .eq("date", date)
+      .order("position"),
+    getStreak(supabase, user.id),
+  ]);
 
   const { data: exercises } = workout
     ? await supabase
@@ -57,15 +66,6 @@ export default async function DashboardPage() {
         .eq("workout_id", workout.id)
         .order("position")
     : { data: [] as { id: string; done: boolean }[] };
-
-  const { data: meals } = await supabase
-    .from("meals")
-    .select("id, name, kcal, done")
-    .eq("user_id", user.id)
-    .eq("date", date)
-    .order("position");
-
-  const streak = await getStreak(supabase, user.id);
 
   const exList = exercises ?? [];
   const mealList = meals ?? [];

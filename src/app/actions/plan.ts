@@ -11,18 +11,35 @@ export async function ensureTodayPlan(userId: string, goal: Goal | null) {
   const supabase = await createClient();
   const date = todayISO();
 
-  const { data: existingWorkout, error: existingWorkoutError } = await supabase
-    .from("workouts")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("date", date)
-    .maybeSingle();
+  // As duas checagens de existência são independentes — roda em paralelo
+  // pra não pagar duas viagens de rede em série.
+  const [
+    { data: existingWorkout, error: existingWorkoutError },
+    { data: existingMeals, error: existingMealsError },
+  ] = await Promise.all([
+    supabase.from("workouts").select("id").eq("user_id", userId).eq("date", date).maybeSingle(),
+    supabase.from("meals").select("id").eq("user_id", userId).eq("date", date).limit(1),
+  ]);
 
   if (existingWorkoutError) {
     console.error("[ensureTodayPlan] failed to read today's workout:", existingWorkoutError);
   }
+  if (existingMealsError) {
+    console.error("[ensureTodayPlan] failed to read today's meals:", existingMealsError);
+  }
 
-  if (!existingWorkout) {
+  const seedMeals = async () => {
+    if (existingMeals && existingMeals.length > 0) return;
+    const { error: mealsError } = await supabase.from("meals").insert(
+      STARTER_MEALS.map((name, i) => ({ user_id: userId, date, name, position: i }))
+    );
+    if (mealsError) {
+      console.error("[ensureTodayPlan] failed to insert meals:", mealsError);
+    }
+  };
+
+  const seedWorkout = async () => {
+    if (existingWorkout) return;
     const { data: workout, error } = await supabase
       .from("workouts")
       .insert({ user_id: userId, date, title: starterWorkoutTitle(goal), duration_min: 40 })
@@ -44,37 +61,21 @@ export async function ensureTodayPlan(userId: string, goal: Goal | null) {
         console.error("[ensureTodayPlan] failed to insert workout_exercises:", exercisesError);
       }
     }
-  }
+  };
 
-  const { data: existingMeals, error: existingMealsError } = await supabase
-    .from("meals")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("date", date)
-    .limit(1);
-
-  if (existingMealsError) {
-    console.error("[ensureTodayPlan] failed to read today's meals:", existingMealsError);
-  }
-
-  if (!existingMeals || existingMeals.length === 0) {
-    const { error: mealsError } = await supabase.from("meals").insert(
-      STARTER_MEALS.map((name, i) => ({ user_id: userId, date, name, position: i }))
-    );
-    if (mealsError) {
-      console.error("[ensureTodayPlan] failed to insert meals:", mealsError);
-    }
-  }
+  await Promise.all([seedWorkout(), seedMeals()]);
 }
 
 /** Aplica o objetivo escolhido no onboarding assim que a conta é confirmada. */
 export async function completeOnboarding(userId: string, goal: Goal) {
   const supabase = await createClient();
-  const { error } = await supabase.from("profiles").update({ goal }).eq("id", userId);
+  const [{ error }] = await Promise.all([
+    supabase.from("profiles").update({ goal }).eq("id", userId),
+    ensureTodayPlan(userId, goal),
+  ]);
   if (error) {
     console.error("[completeOnboarding] failed to save goal:", error);
   }
-  await ensureTodayPlan(userId, goal);
 }
 
 export async function toggleExercise(id: string, done: boolean) {

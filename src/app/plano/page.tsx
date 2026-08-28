@@ -24,12 +24,21 @@ export default async function PlanoPage() {
 
   const date = todayISO();
 
-  const { data: workout } = await supabase
-    .from("workouts")
-    .select("id, title, duration_min")
-    .eq("user_id", user.id)
-    .eq("date", date)
-    .maybeSingle();
+  // Treino e refeições são independentes — busca os dois ao mesmo tempo.
+  const [{ data: workout }, { data: meals }] = await Promise.all([
+    supabase
+      .from("workouts")
+      .select("id, title, duration_min")
+      .eq("user_id", user.id)
+      .eq("date", date)
+      .maybeSingle(),
+    supabase
+      .from("meals")
+      .select("id, name, detail, kcal, done")
+      .eq("user_id", user.id)
+      .eq("date", date)
+      .order("position"),
+  ]);
 
   const { data: exercises } = workout
     ? await supabase
@@ -38,13 +47,6 @@ export default async function PlanoPage() {
         .eq("workout_id", workout.id)
         .order("position")
     : { data: [] };
-
-  const { data: meals } = await supabase
-    .from("meals")
-    .select("id, name, detail, kcal, done")
-    .eq("user_id", user.id)
-    .eq("date", date)
-    .order("position");
 
   return (
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col">

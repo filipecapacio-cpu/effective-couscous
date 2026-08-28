@@ -19,8 +19,10 @@ export default async function PerfilPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
-  const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).single();
-  const summary = await getWeekSummary(supabase, user.id);
+  const [{ data: profile }, summary] = await Promise.all([
+    supabase.from("profiles").select("name").eq("id", user.id).single(),
+    getWeekSummary(supabase, user.id),
+  ]);
 
   const rangeLabel = `${RANGE_FMT.format(new Date(summary.sinceISO))} – ${RANGE_FMT.format(new Date())}`;
   const initial = (profile?.name || user.email || "?").trim().charAt(0).toUpperCase();
