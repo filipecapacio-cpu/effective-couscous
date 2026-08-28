@@ -55,3 +55,36 @@ export async function getWeekSummary(supabase: Supabase, userId: string) {
     sinceISO,
   };
 }
+
+export type HeatmapDay = { date: string; status: "done" | "planned" | "none" };
+
+/** Últimos 28 dias (mais antigo primeiro) para o histórico visual do perfil. */
+export async function getMonthHeatmap(supabase: Supabase, userId: string): Promise<HeatmapDay[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - 27);
+  const sinceISO = since.toISOString().slice(0, 10);
+
+  const { data } = await supabase
+    .from("workouts")
+    .select("date, workout_exercises(done)")
+    .eq("user_id", userId)
+    .gte("date", sinceISO);
+
+  const byDate = new Map(
+    (data ?? []).map((w) => {
+      const list = (w.workout_exercises ?? []) as { done: boolean }[];
+      const status: HeatmapDay["status"] =
+        list.length === 0 ? "none" : list.every((e) => e.done) ? "done" : "planned";
+      return [w.date as string, status];
+    })
+  );
+
+  const days: HeatmapDay[] = [];
+  const cursor = new Date(since);
+  for (let i = 0; i < 28; i++) {
+    const key = cursor.toISOString().slice(0, 10);
+    days.push({ date: key, status: byDate.get(key) ?? "none" });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
+}

@@ -51,6 +51,8 @@ export default async function PlanoPage() {
   return (
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col">
       <PlanoClient
+        workoutId={workout?.id ?? null}
+        userId={user.id}
         workoutTitle={workout?.title ?? "Sem treino hoje"}
         durationMin={workout?.duration_min ?? null}
         exercises={exercises ?? []}

@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
 import ShareSummaryButton from "@/components/ShareSummaryButton";
+import ProfileEditForm from "@/components/ProfileEditForm";
+import Heatmap from "@/components/Heatmap";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-import { getWeekSummary } from "@/lib/data";
+import { getMonthHeatmap, getWeekSummary } from "@/lib/data";
 
 const RANGE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long" });
 
@@ -19,14 +21,16 @@ export default async function PerfilPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
-  const [{ data: profile }, summary] = await Promise.all([
-    supabase.from("profiles").select("name").eq("id", user.id).single(),
+  const [{ data: profile }, summary, heatmap] = await Promise.all([
+    supabase.from("profiles").select("name, weekly_goal").eq("id", user.id).single(),
     getWeekSummary(supabase, user.id),
+    getMonthHeatmap(supabase, user.id),
   ]);
 
   const rangeLabel = `${RANGE_FMT.format(new Date(summary.sinceISO))} – ${RANGE_FMT.format(new Date())}`;
   const initial = (profile?.name || user.email || "?").trim().charAt(0).toUpperCase();
   const hasHistory = summary.daysWithPlan > 0;
+  const weeklyGoal = profile?.weekly_goal ?? 4;
 
   const ringCircumference = 188.5;
   const ringOffset = ringCircumference * (1 - summary.consistency / 100);
@@ -35,10 +39,12 @@ export default async function PerfilPage() {
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col bg-ink-bg text-on-ink relative overflow-hidden">
       <div className="absolute -top-24 -right-20 w-72 h-72 rounded-full bg-accent opacity-20 blur-[2px] pointer-events-none" />
 
-      <header className="px-5 pt-5 flex items-center justify-center relative">
+      <header className="px-5 pt-5 flex items-center justify-between relative">
+        <div className="w-9" />
         <div className="text-[13px] text-on-ink-soft uppercase tracking-[0.08em]">
           Resumo da semana
         </div>
+        <ProfileEditForm name={profile?.name || ""} weeklyGoal={weeklyGoal} />
       </header>
 
       <main className="flex-1 flex flex-col">
@@ -92,7 +98,7 @@ export default async function PerfilPage() {
               />
             </svg>
             <div>
-              <div className="text-xs text-on-ink-soft">Consistência da semana</div>
+              <div className="text-xs text-on-ink-soft">Meta: {weeklyGoal}x por semana</div>
               <div className="text-lg font-semibold mt-0.5">{summary.consistency}% concluída</div>
             </div>
           </div>
@@ -103,9 +109,16 @@ export default async function PerfilPage() {
           </div>
         </div>
 
+        <div className="px-5 pt-6">
+          <div className="text-[13px] font-semibold text-on-ink-soft uppercase tracking-[0.06em] mb-3">
+            Últimas 4 semanas
+          </div>
+          <Heatmap days={heatmap} />
+        </div>
+
         <div className="flex-1" />
 
-        <div className="px-5 pb-7 pt-4.5">
+        <div className="px-5 pb-7 pt-6">
           <ShareSummaryButton
             disabled={!hasHistory}
             text={`${summary.workoutsCompleted}/${summary.daysWithPlan} treinos concluídos e ${summary.consistency}% de consistência essa semana no Pulso.`}

@@ -97,3 +97,82 @@ export async function toggleMeal(id: string, done: boolean) {
   revalidatePath("/plano");
   revalidatePath("/dashboard");
 }
+
+async function nextPosition(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  table: "workout_exercises" | "meals",
+  match: Record<string, string>
+) {
+  const { data } = await supabase
+    .from(table)
+    .select("position")
+    .match(match)
+    .order("position", { ascending: false })
+    .limit(1);
+  return (data?.[0]?.position ?? -1) + 1;
+}
+
+export async function addExercise(workoutId: string, name: string, detail: string | null) {
+  if (!name.trim()) return;
+  const supabase = await createClient();
+  const position = await nextPosition(supabase, "workout_exercises", { workout_id: workoutId });
+  const { error } = await supabase
+    .from("workout_exercises")
+    .insert({ workout_id: workoutId, name: name.trim(), detail, position });
+  if (error) console.error("[addExercise] failed:", error);
+  revalidatePath("/plano");
+  revalidatePath("/dashboard");
+}
+
+export async function updateExercise(id: string, name: string, detail: string | null) {
+  if (!name.trim()) return;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("workout_exercises")
+    .update({ name: name.trim(), detail })
+    .eq("id", id);
+  if (error) console.error("[updateExercise] failed:", error);
+  revalidatePath("/plano");
+  revalidatePath("/dashboard");
+}
+
+export async function deleteExercise(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("workout_exercises").delete().eq("id", id);
+  if (error) console.error("[deleteExercise] failed:", error);
+  revalidatePath("/plano");
+  revalidatePath("/dashboard");
+}
+
+export async function addMeal(userId: string, name: string, detail: string | null, kcal: number | null) {
+  if (!name.trim()) return;
+  const supabase = await createClient();
+  const date = todayISO();
+  const position = await nextPosition(supabase, "meals", { user_id: userId, date });
+  const { error } = await supabase
+    .from("meals")
+    .insert({ user_id: userId, date, name: name.trim(), detail, kcal, position });
+  if (error) console.error("[addMeal] failed:", error);
+  revalidatePath("/plano");
+  revalidatePath("/dashboard");
+}
+
+export async function updateMeal(id: string, name: string, detail: string | null, kcal: number | null) {
+  if (!name.trim()) return;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("meals")
+    .update({ name: name.trim(), detail, kcal })
+    .eq("id", id);
+  if (error) console.error("[updateMeal] failed:", error);
+  revalidatePath("/plano");
+  revalidatePath("/dashboard");
+}
+
+export async function deleteMeal(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("meals").delete().eq("id", id);
+  if (error) console.error("[deleteMeal] failed:", error);
+  revalidatePath("/plano");
+  revalidatePath("/dashboard");
+}
