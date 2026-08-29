@@ -41,11 +41,12 @@ export default async function AgendaPage({
 
   const { data: items } = await supabase
     .from("agenda_items")
-    .select("id, title, time, notes, done")
+    .select("id, title, time, notes, done, agenda_checklist_items(id, text, done, position)")
     .eq("user_id", user.id)
     .eq("date", date)
     .order("time", { ascending: true, nullsFirst: false })
-    .order("position", { ascending: true });
+    .order("position", { ascending: true })
+    .order("position", { referencedTable: "agenda_checklist_items", ascending: true });
 
   const dateLabel = DATE_LABEL.format(new Date(`${date}T12:00:00Z`));
 

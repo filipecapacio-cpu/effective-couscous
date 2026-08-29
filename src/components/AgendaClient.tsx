@@ -1,10 +1,26 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "@/components/icons";
-import { addAgendaItem, deleteAgendaItem, toggleAgendaItem, updateAgendaItem } from "@/app/actions/agenda";
+import { CheckIcon, ChevronRightIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "@/components/icons";
+import {
+  addAgendaItem,
+  addChecklistItem,
+  deleteAgendaItem,
+  deleteChecklistItem,
+  toggleAgendaItem,
+  toggleChecklistItem,
+  updateAgendaItem,
+} from "@/app/actions/agenda";
 
-type Item = { id: string; title: string; time: string | null; notes: string | null; done: boolean };
+type ChecklistItem = { id: string; text: string; done: boolean };
+type Item = {
+  id: string;
+  title: string;
+  time: string | null;
+  notes: string | null;
+  done: boolean;
+  agenda_checklist_items: ChecklistItem[];
+};
 
 export default function AgendaClient({
   userId,
@@ -18,6 +34,7 @@ export default function AgendaClient({
   const [, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>({});
 
   return (
     <div className="flex flex-col gap-3">
@@ -39,41 +56,50 @@ export default function AgendaClient({
         ) : (
           <div
             key={item.id}
-            className={`flex items-start gap-3 p-3.5 rounded-2xl ${
-              item.done ? "bg-card" : "bg-paper border-[1.5px] border-line"
-            }`}
+            className={`rounded-2xl ${item.done ? "bg-card" : "bg-paper border-[1.5px] border-line"}`}
           >
-            <button
-              onClick={() => startTransition(() => toggleAgendaItem(item.id, !item.done))}
-              className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                item.done ? "bg-accent" : "border-[1.5px] border-line"
-              }`}
-            >
-              {item.done && <CheckIcon size={13} className="text-accent-ink" />}
-            </button>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-2">
-                {item.time && (
-                  <span className="text-[13px] font-semibold text-accent flex-shrink-0">
-                    {item.time.slice(0, 5)}
+            <div className="flex items-start gap-3 p-3.5">
+              <button
+                onClick={() => startTransition(() => toggleAgendaItem(item.id, !item.done))}
+                className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  item.done ? "bg-accent" : "border-[1.5px] border-line"
+                }`}
+              >
+                {item.done && <CheckIcon size={13} className="text-accent-ink" />}
+              </button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  {item.time && (
+                    <span className="text-[13px] font-semibold text-accent flex-shrink-0">
+                      {item.time.slice(0, 5)}
+                    </span>
+                  )}
+                  <span className={`text-[15px] font-semibold truncate ${item.done && "text-ink-soft"}`}>
+                    {item.title}
                   </span>
-                )}
-                <span className={`text-[15px] font-semibold truncate ${item.done && "text-ink-soft"}`}>
-                  {item.title}
-                </span>
+                </div>
+                {item.notes && <div className="text-[13px] text-ink-soft mt-0.5">{item.notes}</div>}
               </div>
-              {item.notes && <div className="text-[13px] text-ink-soft mt-0.5">{item.notes}</div>}
+              <button onClick={() => setEditingId(item.id)} aria-label="Editar" className="text-ink-faint flex-shrink-0">
+                <PencilIcon size={16} />
+              </button>
+              <button
+                onClick={() => startTransition(() => deleteAgendaItem(item.id))}
+                aria-label="Remover"
+                className="text-ink-faint flex-shrink-0"
+              >
+                <TrashIcon size={16} />
+              </button>
             </div>
-            <button onClick={() => setEditingId(item.id)} aria-label="Editar" className="text-ink-faint flex-shrink-0">
-              <PencilIcon size={16} />
-            </button>
-            <button
-              onClick={() => startTransition(() => deleteAgendaItem(item.id))}
-              aria-label="Remover"
-              className="text-ink-faint flex-shrink-0"
-            >
-              <TrashIcon size={16} />
-            </button>
+
+            <ChecklistSection
+              agendaItemId={item.id}
+              checklist={item.agenda_checklist_items}
+              open={openChecklists[item.id] ?? item.agenda_checklist_items.length > 0}
+              onToggleOpen={() =>
+                setOpenChecklists((prev) => ({ ...prev, [item.id]: !(prev[item.id] ?? item.agenda_checklist_items.length > 0) }))
+              }
+            />
           </div>
         )
       )}
@@ -94,6 +120,89 @@ export default function AgendaClient({
           <PlusIcon size={16} />
           Adicionar compromisso
         </button>
+      )}
+    </div>
+  );
+}
+
+function ChecklistSection({
+  agendaItemId,
+  checklist,
+  open,
+  onToggleOpen,
+}: {
+  agendaItemId: string;
+  checklist: ChecklistItem[];
+  open: boolean;
+  onToggleOpen: () => void;
+}) {
+  const [, startTransition] = useTransition();
+  const [newText, setNewText] = useState("");
+  const done = checklist.filter((c) => c.done).length;
+
+  function submitNew() {
+    const text = newText.trim();
+    if (!text) return;
+    startTransition(() => addChecklistItem(agendaItemId, text));
+    setNewText("");
+  }
+
+  return (
+    <div className="px-3.5 pb-3.5 pl-[46px]">
+      <button
+        onClick={onToggleOpen}
+        className="flex items-center gap-1.5 text-[12.5px] text-ink-soft font-semibold"
+      >
+        <ChevronRightIcon
+          size={13}
+          className="transition-transform"
+          strokeWidth={2.2}
+          {...(open ? { style: { transform: "rotate(90deg)" } } : {})}
+        />
+        {checklist.length > 0 ? `Checklist · ${done}/${checklist.length}` : "Checklist"}
+      </button>
+
+      {open && (
+        <div className="flex flex-col gap-1.5 mt-2">
+          {checklist.map((c) => (
+            <div key={c.id} className="flex items-center gap-2.5">
+              <button
+                onClick={() => startTransition(() => toggleChecklistItem(c.id, !c.done))}
+                className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${
+                  c.done ? "bg-accent" : "border-[1.5px] border-line"
+                }`}
+              >
+                {c.done && <CheckIcon size={11} className="text-accent-ink" />}
+              </button>
+              <span className={`text-[13.5px] flex-1 min-w-0 truncate ${c.done ? "text-ink-faint line-through" : "text-ink"}`}>
+                {c.text}
+              </span>
+              <button
+                onClick={() => startTransition(() => deleteChecklistItem(c.id))}
+                aria-label="Remover item"
+                className="text-ink-faint flex-shrink-0"
+              >
+                <XIcon size={13} />
+              </button>
+            </div>
+          ))}
+
+          <div className="flex items-center gap-2.5 mt-0.5">
+            <div className="w-5 h-5 rounded-md border-[1.5px] border-dashed border-line flex-shrink-0" />
+            <input
+              value={newText}
+              onChange={(e) => setNewText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  submitNew();
+                }
+              }}
+              placeholder="Adicionar item…"
+              className="flex-1 min-w-0 h-7 text-[13.5px] outline-none bg-transparent placeholder:text-ink-faint"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

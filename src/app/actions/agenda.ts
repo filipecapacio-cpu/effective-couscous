@@ -69,3 +69,35 @@ export async function deleteAgendaItem(id: string) {
   if (error) console.error("[deleteAgendaItem] failed:", error);
   revalidatePath("/agenda");
 }
+
+export async function addChecklistItem(agendaItemId: string, text: string) {
+  if (!text.trim()) return;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("agenda_checklist_items")
+    .select("position")
+    .eq("agenda_item_id", agendaItemId)
+    .order("position", { ascending: false })
+    .limit(1);
+  const position = (data?.[0]?.position ?? -1) + 1;
+
+  const { error } = await supabase
+    .from("agenda_checklist_items")
+    .insert({ agenda_item_id: agendaItemId, text: text.trim(), position });
+  if (error) console.error("[addChecklistItem] failed:", error);
+  revalidatePath("/agenda");
+}
+
+export async function toggleChecklistItem(id: string, done: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("agenda_checklist_items").update({ done }).eq("id", id);
+  if (error) console.error("[toggleChecklistItem] failed:", error);
+  revalidatePath("/agenda");
+}
+
+export async function deleteChecklistItem(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("agenda_checklist_items").delete().eq("id", id);
+  if (error) console.error("[deleteChecklistItem] failed:", error);
+  revalidatePath("/agenda");
+}
