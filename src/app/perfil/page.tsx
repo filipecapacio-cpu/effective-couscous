@@ -7,6 +7,7 @@ import SetupNotice from "@/components/SetupNotice";
 import ShareSummaryButton from "@/components/ShareSummaryButton";
 import ProfileEditForm from "@/components/ProfileEditForm";
 import Heatmap from "@/components/Heatmap";
+import { Logo } from "@/components/Logo";
 import { SparkleIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAnthropicConfigured } from "@/lib/anthropic";
@@ -63,11 +64,11 @@ export default async function PerfilPage() {
           </div>
 
           {hasHistory ? (
-            <div className="font-serif italic text-[34px] leading-[1.15] mb-5.5">
+            <div className="font-bold uppercase tracking-[-0.02em] text-[34px] leading-[1.15] mb-5.5">
               {summary.workoutsCompleted} de {summary.daysWithPlan} treinos concluídos essa semana.
             </div>
           ) : (
-            <div className="font-serif italic text-[28px] leading-[1.25] mb-5.5 text-on-ink-soft">
+            <div className="font-bold uppercase tracking-[-0.02em] text-[28px] leading-[1.25] mb-5.5 text-on-ink-soft">
               Sua semana começa agora. Volte depois do primeiro treino.
             </div>
           )}
@@ -78,7 +79,7 @@ export default async function PerfilPage() {
               { value: `${summary.consistency}%`, label: "consistência" },
             ].map((stat) => (
               <div key={stat.label} className="flex-1 bg-white/5 rounded-2xl p-3.5">
-                <div className="font-serif italic text-[28px] text-accent">{stat.value}</div>
+                <div className="font-bold tracking-[-0.02em] text-[28px] text-accent">{stat.value}</div>
                 <div className="text-[11.5px] text-on-ink-soft mt-1">{stat.label}</div>
               </div>
             ))}
@@ -107,8 +108,8 @@ export default async function PerfilPage() {
           </div>
 
           <div className="flex items-center justify-between mt-6 pt-4.5 border-t border-white/10">
-            <div className="font-serif italic text-[19px]">Pulso</div>
-            <div className="text-[11px] text-on-ink-faint">pulso.app</div>
+            <Logo size={16} className="text-[15px]" />
+            <div className="text-[11px] text-on-ink-faint font-mono">pulso.app</div>
           </div>
         </div>
 

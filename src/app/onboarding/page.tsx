@@ -37,7 +37,7 @@ export default function OnboardingPage() {
       </div>
 
       <div className="px-6 pt-7 pb-1">
-        <h1 className="font-serif text-3xl leading-tight">Qual é o seu foco principal agora?</h1>
+        <h1 className="font-bold uppercase tracking-[-0.02em] text-3xl leading-tight">Qual é o seu foco principal agora?</h1>
         <p className="text-sm text-ink-soft mt-2.5">Você pode ajustar isso quando quiser.</p>
       </div>
 

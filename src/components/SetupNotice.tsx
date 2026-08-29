@@ -4,7 +4,7 @@ export default function SetupNotice() {
       <div className="text-[13px] tracking-[0.1em] uppercase text-ink-soft font-semibold">
         Configuração pendente
       </div>
-      <h1 className="font-serif text-3xl">Falta ligar o backend.</h1>
+      <h1 className="font-bold uppercase tracking-[-0.02em] text-3xl">Falta ligar o backend.</h1>
       <p className="text-ink-soft text-[15px] leading-relaxed">
         Essa tela precisa de uma conta e de dados salvos, então precisa do
         Supabase configurado:

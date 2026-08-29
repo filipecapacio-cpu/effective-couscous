@@ -94,7 +94,7 @@ export default async function DashboardPage() {
       <header className="px-6 pt-6 pb-1.5 flex items-center justify-between">
         <div>
           <div className="text-[13px] text-ink-soft">Bom dia{firstName ? `, ${firstName}` : ""}</div>
-          <div className="font-serif italic text-2xl mt-0.5 capitalize">{dateLabel}</div>
+          <div className="font-bold uppercase tracking-[-0.02em] text-2xl mt-0.5">{dateLabel}</div>
         </div>
         <form action={signOut}>
           <button
@@ -130,13 +130,13 @@ export default async function DashboardPage() {
               <span className="text-on-ink-soft text-xs">Sequência</span>
               <FlameIcon size={16} className="text-accent" />
             </div>
-            <div className="font-serif italic text-on-ink text-4xl">
-              {streak} <span className="font-sans not-italic text-[15px] text-on-ink-soft">dias</span>
+            <div className="font-bold tracking-[-0.02em] text-on-ink text-4xl">
+              {streak} <span className="text-[15px] font-normal text-on-ink-soft">dias</span>
             </div>
           </div>
           <div className="flex-1 bg-card rounded-[20px] p-4.5 flex flex-col justify-between h-[132px]">
             <span className="text-ink-soft text-xs">Progresso de hoje</span>
-            <div className="font-serif italic text-4xl">{progressPct}%</div>
+            <div className="font-bold tracking-[-0.02em] text-4xl">{progressPct}%</div>
           </div>
         </div>
 
@@ -148,7 +148,7 @@ export default async function DashboardPage() {
               <span className="text-xs text-on-ink-soft">{workout.duration_min} min</span>
             )}
           </div>
-          <div className="font-serif italic text-2xl">{workout?.title ?? "Sem treino hoje"}</div>
+          <div className="font-bold uppercase tracking-[-0.02em] text-2xl">{workout?.title ?? "Sem treino hoje"}</div>
           <div className="flex items-center justify-between">
             <div className="flex gap-1.5">
               {exList.map((e) => (

@@ -4,7 +4,7 @@ type IconProps = {
   strokeWidth?: number;
 };
 
-const base = { fill: "none", strokeLinecap: "round", strokeLinejoin: "round" } as const;
+const base = { fill: "none", strokeLinecap: "square", strokeLinejoin: "miter" } as const;
 
 export function DumbbellIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
   return (

@@ -62,7 +62,7 @@ export default async function AgendaPage({
           >
             <ChevronLeftIcon size={17} className="text-ink-soft" />
           </Link>
-          <h1 className="font-serif italic text-2xl capitalize text-center px-2 truncate">
+          <h1 className="font-bold uppercase tracking-[-0.02em] text-2xl text-center px-2 truncate">
             {isToday ? "Hoje" : dateLabel}
           </h1>
           <Link

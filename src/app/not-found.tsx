@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 
 export default function NotFound() {
   return (
     <div className="mx-auto w-full max-w-md min-h-svh flex flex-col items-center justify-center gap-5 px-6 text-center">
-      <div className="font-serif italic text-2xl">Pulso</div>
-      <h1 className="font-serif text-4xl">Página fora do ritmo.</h1>
+      <Logo className="text-2xl" />
+      <h1 className="font-bold uppercase tracking-[-0.02em] text-4xl">Página fora do ritmo.</h1>
       <p className="text-ink-soft text-[15px]">Essa página não existe ou foi movida.</p>
       <Link
         href="/"

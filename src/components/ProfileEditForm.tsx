@@ -34,7 +34,7 @@ export default function ProfileEditForm({ name, weeklyGoal }: { name: string; we
         className="w-full max-w-sm bg-ink-bg-2 border border-white/10 rounded-[24px] p-6 flex flex-col gap-4"
       >
         <div className="flex items-center justify-between">
-          <h2 className="font-serif italic text-2xl text-on-ink">Editar perfil</h2>
+          <h2 className="font-bold uppercase tracking-[-0.02em] text-2xl text-on-ink">Editar perfil</h2>
           <button type="button" onClick={() => setOpen(false)} aria-label="Fechar">
             <XIcon size={18} className="text-on-ink-soft" />
           </button>

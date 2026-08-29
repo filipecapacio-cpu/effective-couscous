@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import {
   DumbbellIcon,
   LeafIcon,
@@ -48,7 +49,7 @@ export default function LandingPage() {
     <div className="flex flex-col">
       {/* NAV */}
       <header className="h-20 md:h-24 px-6 md:px-16 flex items-center justify-between border-b border-line">
-        <div className="font-serif italic text-2xl">Pulso</div>
+        <Logo className="text-2xl" />
         <nav className="hidden md:flex items-center gap-10 text-[15px] text-ink-soft">
           <a href="#metodo">Método</a>
           <a href="#pilares">Treino</a>
@@ -74,7 +75,7 @@ export default function LandingPage() {
           <div className="text-[13px] tracking-[0.14em] uppercase text-ink-soft font-semibold">
             Rotina real, performance real
           </div>
-          <h1 className="font-serif text-5xl md:text-[68px] leading-[1.03]">
+          <h1 className="font-bold uppercase tracking-[-0.02em] text-5xl md:text-[68px] leading-[1.03]">
             Alta performance que cabe na sua rotina.
           </h1>
           <p className="text-lg leading-relaxed text-ink-soft max-w-[480px]">
@@ -111,7 +112,7 @@ export default function LandingPage() {
             </div>
             <div className="relative">
               <div className="text-on-ink-soft text-[13px] mb-1.5">Recuperação</div>
-              <div className="font-serif italic text-on-ink text-5xl md:text-[56px] leading-none">
+              <div className="font-bold tracking-[-0.02em] text-on-ink text-5xl md:text-[56px] leading-none">
                 82%
               </div>
               <svg width="100%" height="64" viewBox="0 0 300 64" className="mt-4" preserveAspectRatio="none">
@@ -142,7 +143,7 @@ export default function LandingPage() {
       {/* PILLARS */}
       <section id="pilares" className="px-6 md:px-16 pt-8 pb-16 md:pb-24 border-t border-line">
         <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-10">
-          <h2 className="font-serif text-3xl md:text-[38px] max-w-[520px]">
+          <h2 className="font-bold uppercase tracking-[-0.02em] text-3xl md:text-[38px] max-w-[520px]">
             Um método, quatro frentes que se sustentam.
           </h2>
           <p className="text-ink-soft text-[15px] max-w-[320px]">
@@ -169,7 +170,7 @@ export default function LandingPage() {
           {testimonials.map(({ quote, role }) => (
             <div key={role} className="flex flex-col gap-5">
               <QuoteIcon size={34} className="text-ink" />
-              <p className="font-serif italic text-2xl md:text-[26px] leading-snug">{quote}</p>
+              <p className="italic text-2xl md:text-[26px] leading-snug">{quote}</p>
               <div className="text-sm text-ink-soft font-semibold">{role}</div>
             </div>
           ))}
@@ -178,7 +179,7 @@ export default function LandingPage() {
 
       {/* FINAL CTA */}
       <section className="px-6 md:px-16 py-20 md:py-24 text-center flex flex-col items-center gap-7">
-        <h2 className="font-serif text-4xl md:text-[44px] max-w-xl">Seu ritmo começa hoje.</h2>
+        <h2 className="font-bold uppercase tracking-[-0.02em] text-4xl md:text-[44px] max-w-xl">Seu ritmo começa hoje.</h2>
         <Link
           href="/onboarding"
           className="h-13 px-8 inline-flex items-center justify-center rounded-full bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors"
@@ -191,7 +192,7 @@ export default function LandingPage() {
       <footer className="bg-ink-bg text-on-ink px-6 md:px-16 pt-14 pb-10 mt-auto">
         <div className="grid grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr] gap-10 pb-12 border-b border-white/10">
           <div className="flex flex-col gap-3.5 col-span-2 md:col-span-1">
-            <div className="font-serif italic text-2xl">Pulso</div>
+            <Logo className="text-2xl" />
             <p className="text-on-ink-soft text-sm max-w-[280px] leading-relaxed">
               Performance discreta pra quem também vive de agenda cheia.
             </p>

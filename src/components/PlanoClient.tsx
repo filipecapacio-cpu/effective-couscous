@@ -46,7 +46,7 @@ export default function PlanoClient({
     <>
       <header className="px-6 pt-6 pb-1">
         <div className="text-[13px] text-ink-soft">Hoje</div>
-        <h1 className="font-serif italic text-[28px] mt-1">Seu plano do dia</h1>
+        <h1 className="font-bold uppercase tracking-[-0.02em] text-[28px] mt-1">Seu plano do dia</h1>
       </header>
 
       <div className="px-6 pt-4.5">
@@ -54,7 +54,7 @@ export default function PlanoClient({
           <button
             onClick={() => setTab("treino")}
             className={`flex-1 text-center py-2.5 rounded-full text-sm font-semibold transition-colors ${
-              tab === "treino" ? "bg-ink text-paper" : "text-ink-soft"
+              tab === "treino" ? "bg-accent text-accent-ink" : "text-ink-soft"
             }`}
           >
             Treino
@@ -62,7 +62,7 @@ export default function PlanoClient({
           <button
             onClick={() => setTab("dieta")}
             className={`flex-1 text-center py-2.5 rounded-full text-sm font-semibold transition-colors ${
-              tab === "dieta" ? "bg-ink text-paper" : "text-ink-soft"
+              tab === "dieta" ? "bg-accent text-accent-ink" : "text-ink-soft"
             }`}
           >
             Dieta

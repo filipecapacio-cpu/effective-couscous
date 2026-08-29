@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --paper: oklch(97.5% 0.012 85);
-  --card: oklch(95% 0.014 85);
-  --ink: oklch(19% 0.02 85);
-  --ink-soft: oklch(46% 0.02 85);
-  --ink-faint: oklch(68% 0.015 85);
-  --line: oklch(88% 0.012 85);
-  --accent: oklch(58% 0.15 45);
-  --accent-ink: oklch(99% 0.01 85);
-  --accent-soft: oklch(93% 0.035 55);
-  --ink-bg: oklch(17% 0.018 85);
-  --ink-bg-2: oklch(20% 0.018 85);
-  --on-ink: oklch(96% 0.01 85);
-  --on-ink-soft: oklch(72% 0.02 85);
-  --on-ink-faint: oklch(45% 0.02 85);
+  --paper: #0a0b0b;
+  --card: #0f1110;
+  --ink: #f2f4f2;
+  --ink-soft: #a7ada9;
+  --ink-faint: #6d7370;
+  --line: #1e2120;
+  --accent: #c8ff1e;
+  --accent-ink: #0a0b0b;
+  --accent-soft: #182410;
+  --ink-bg: #0f1110;
+  --ink-bg-2: #161918;
+  --on-ink: #f2f4f2;
+  --on-ink-soft: #a7ada9;
+  --on-ink-faint: #6d7370;
 }
 
 @theme inline {
@@ -32,8 +32,8 @@
   --color-on-ink: var(--on-ink);
   --color-on-ink-soft: var(--on-ink-soft);
   --color-on-ink-faint: var(--on-ink-faint);
-  --font-serif: var(--font-instrument-serif);
   --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 body {
