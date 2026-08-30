@@ -178,12 +178,18 @@ async function withModelFallback<T>(fn: (model: string) => Promise<T>): Promise<
 async function generateWeekPlan(client: Anthropic, userPrompt: string): Promise<{ plan: WeekPlan; model: string }> {
   const response = await withModelFallback((model) =>
     client.messages
-      .stream({
-        model,
-        max_tokens: 16000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userPrompt }],
-      })
+      .stream(
+        {
+          model,
+          max_tokens: 16000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userPrompt }],
+        },
+        // Timeout bem abaixo do maxDuration da página (60s): se passar disso,
+        // falha rápido e limpo (e aciona o fallback de modelo) em vez de deixar
+        // o usuário com a tela carregando pra sempre até o Vercel matar a função.
+        { timeout: 50_000 }
+      )
       .finalMessage()
   );
 
@@ -355,12 +361,15 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
   let reply: string;
   try {
     const response = await withModelFallback((model) =>
-      client.messages.create({
-        model,
-        max_tokens: 1024,
-        system: `${CHAT_SYSTEM_PROMPT}\n\n${contextNote}`,
-        messages,
-      })
+      client.messages.create(
+        {
+          model,
+          max_tokens: 1024,
+          system: `${CHAT_SYSTEM_PROMPT}\n\n${contextNote}`,
+          messages,
+        },
+        { timeout: 25_000 }
+      )
     );
     const textBlock = response.content.find(
       (b): b is Anthropic.TextBlock => b.type === "text"
