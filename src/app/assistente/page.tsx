@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 import { redirect } from "next/navigation";
 import BottomNav from "@/components/BottomNav";

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createClient } from "@/lib/supabase/server";
-import { getAnthropicClient, isAnthropicConfigured } from "@/lib/anthropic";
+import { describeAnthropicError, getAnthropicClient, isAnthropicConfigured } from "@/lib/anthropic";
 import { WeekPlanSchema, type WeekPlan } from "@/lib/ai-plan";
 import { replaceTodayPlanWithAiPlan } from "@/app/actions/plan";
 import { GOAL_LABEL, type Goal } from "@/lib/plan";
@@ -166,8 +166,7 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
   } catch (err) {
     console.error("[saveAnamnesisAndGeneratePlan] Anthropic API error:", err);
     return {
-      error:
-        "Não consegui gerar o plano agora. Sua anamnese foi salva - tenta gerar de novo no seu perfil em instantes.",
+      error: `${describeAnthropicError(err)} Sua anamnese foi salva - tenta gerar de novo no seu perfil.`,
     };
   }
 
@@ -223,7 +222,7 @@ export async function regeneratePlan(): Promise<AiActionResult> {
     plan = response.parsed_output;
   } catch (err) {
     console.error("[regeneratePlan] Anthropic API error:", err);
-    return { error: "Não consegui gerar o plano agora. Tenta de novo em instantes." };
+    return { error: describeAnthropicError(err) };
   }
 
   const { error: planError } = await supabase.from("ai_plans").upsert({
@@ -303,7 +302,7 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
     reply = textBlock?.text ?? "Não consegui pensar numa resposta agora — tenta reformular?";
   } catch (err) {
     console.error("[sendChatMessage] Anthropic API error:", err);
-    return { error: "Não consegui responder agora. Tenta de novo em instantes." };
+    return { error: describeAnthropicError(err) };
   }
 
   const { error: insertError } = await supabase.from("chat_messages").insert([

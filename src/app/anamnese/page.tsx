@@ -1,4 +1,7 @@
 export const dynamic = "force-dynamic";
+// Gerar o plano semanal com IA pode levar bem mais que o timeout padrão de
+// função serverless — dá folga pro Vercel não matar a requisição no meio.
+export const maxDuration = 60;
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
