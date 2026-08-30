@@ -21,7 +21,7 @@ export default async function CadastroPage({
       </Link>
 
       <div className="flex flex-col gap-2">
-        <h1 className="font-bold uppercase tracking-[-0.02em] text-3xl">Criar minha conta</h1>
+        <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-3xl">Criar minha conta</h1>
         <p className="text-ink-soft text-[15px]">
           Seu ritmo começa aqui — treino, refeições e progresso salvos de
           verdade.

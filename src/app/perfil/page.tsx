@@ -45,16 +45,16 @@ export default async function PerfilPage() {
 
       <header className="px-5 pt-5 flex items-center justify-between relative">
         <div className="w-9" />
-        <div className="text-[13px] text-on-ink-soft uppercase tracking-[0.08em]">
+        <div className="text-[13px] font-mono text-on-ink-soft uppercase tracking-[0.08em]">
           Resumo da semana
         </div>
         <ProfileEditForm name={profile?.name || ""} weeklyGoal={weeklyGoal} />
       </header>
 
       <main className="flex-1 flex flex-col">
-        <div className="mx-5 mt-5 bg-ink-bg-2 rounded-[28px] border border-white/10 p-6 relative flex-shrink-0">
+        <div className="mx-5 mt-5 bg-ink-bg-2 rounded-lg border border-white/10 p-6 relative flex-shrink-0">
           <div className="flex items-center gap-3 mb-5.5">
-            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-[15px] font-bold text-accent-ink">
+            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-[15px] font-display font-bold text-accent-ink">
               {initial}
             </div>
             <div>
@@ -64,11 +64,11 @@ export default async function PerfilPage() {
           </div>
 
           {hasHistory ? (
-            <div className="font-bold uppercase tracking-[-0.02em] text-[34px] leading-[1.15] mb-5.5">
+            <div className="font-display font-bold uppercase tracking-[-0.02em] text-[34px] leading-[1.15] mb-5.5">
               {summary.workoutsCompleted} de {summary.daysWithPlan} treinos concluídos essa semana.
             </div>
           ) : (
-            <div className="font-bold uppercase tracking-[-0.02em] text-[28px] leading-[1.25] mb-5.5 text-on-ink-soft">
+            <div className="font-display font-bold uppercase tracking-[-0.02em] text-[28px] leading-[1.25] mb-5.5 text-on-ink-soft">
               Sua semana começa agora. Volte depois do primeiro treino.
             </div>
           )}
@@ -78,8 +78,8 @@ export default async function PerfilPage() {
               { value: `${summary.workoutsCompleted}/${summary.daysWithPlan}`, label: "treinos feitos" },
               { value: `${summary.consistency}%`, label: "consistência" },
             ].map((stat) => (
-              <div key={stat.label} className="flex-1 bg-white/5 rounded-2xl p-3.5">
-                <div className="font-bold tracking-[-0.02em] text-[28px] text-accent">{stat.value}</div>
+              <div key={stat.label} className="flex-1 bg-white/5 rounded-lg p-3.5">
+                <div className="font-display font-bold tracking-[-0.02em] text-[28px] text-accent">{stat.value}</div>
                 <div className="text-[11.5px] text-on-ink-soft mt-1">{stat.label}</div>
               </div>
             ))}
@@ -109,12 +109,12 @@ export default async function PerfilPage() {
 
           <div className="flex items-center justify-between mt-6 pt-4.5 border-t border-white/10">
             <Logo size={16} className="text-[15px]" />
-            <div className="text-[11px] text-on-ink-faint font-mono">pulso.app</div>
+            <div className="text-[11px] text-on-ink-faint font-mono">onmode.app</div>
           </div>
         </div>
 
         <div className="px-5 pt-6">
-          <div className="text-[13px] font-semibold text-on-ink-soft uppercase tracking-[0.06em] mb-3">
+          <div className="text-[13px] font-mono font-semibold text-on-ink-soft uppercase tracking-[0.06em] mb-3">
             Últimas 4 semanas
           </div>
           <Heatmap days={heatmap} />
@@ -124,7 +124,7 @@ export default async function PerfilPage() {
           <div className="px-5 pt-6">
             <Link
               href="/anamnese"
-              className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10"
+              className="flex items-center gap-3 p-4 rounded-lg bg-white/5 border border-white/10"
             >
               <SparkleIcon size={18} className="text-accent flex-shrink-0" />
               <div className="flex-1">
@@ -142,7 +142,7 @@ export default async function PerfilPage() {
         <div className="px-5 pb-7 pt-6">
           <ShareSummaryButton
             disabled={!hasHistory}
-            text={`${summary.workoutsCompleted}/${summary.daysWithPlan} treinos concluídos e ${summary.consistency}% de consistência essa semana no Pulso.`}
+            text={`${summary.workoutsCompleted}/${summary.daysWithPlan} treinos concluídos e ${summary.consistency}% de consistência essa semana no Onmode.`}
           />
         </div>
       </main>

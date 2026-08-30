@@ -56,7 +56,7 @@ export default function AgendaClient({
         ) : (
           <div
             key={item.id}
-            className={`rounded-2xl ${item.done ? "bg-card" : "bg-paper border-[1.5px] border-line"}`}
+            className={`rounded-lg ${item.done ? "bg-card" : "bg-paper border-[1.5px] border-line"}`}
           >
             <div className="flex items-start gap-3 p-3.5">
               <button
@@ -115,7 +115,7 @@ export default function AgendaClient({
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="flex items-center justify-center gap-2 p-3.5 rounded-2xl border-[1.5px] border-dashed border-line text-ink-soft text-sm font-semibold"
+          className="flex items-center justify-center gap-2 p-3.5 rounded-lg border-[1.5px] border-dashed border-line text-ink-soft text-sm font-semibold"
         >
           <PlusIcon size={16} />
           Adicionar compromisso
@@ -222,7 +222,7 @@ function ItemForm({
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   return (
-    <div className="flex flex-col gap-2 p-3.5 rounded-2xl border-[1.5px] border-ink">
+    <div className="flex flex-col gap-2 p-3.5 rounded-lg border-[1.5px] border-ink">
       <div className="flex gap-2">
         <input
           autoFocus
@@ -247,7 +247,7 @@ function ItemForm({
       <div className="flex gap-2 mt-1">
         <button
           onClick={() => title.trim() && onSave(title.trim(), time || null, notes.trim() || null)}
-          className="flex-1 h-9 rounded-full bg-ink text-paper text-sm font-semibold"
+          className="flex-1 h-9 rounded bg-ink text-paper text-sm font-semibold"
         >
           Salvar
         </button>

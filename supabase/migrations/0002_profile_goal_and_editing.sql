@@ -1,4 +1,4 @@
--- Pulso — meta semanal no perfil
+-- Onmode — meta semanal no perfil
 -- Rode este arquivo no SQL Editor do seu projeto Supabase, depois de já
 -- ter rodado o 0001_init.sql.
 

@@ -2,8 +2,14 @@ import type { HeatmapDay } from "@/lib/data";
 
 const STATUS_COLOR: Record<HeatmapDay["status"], string> = {
   done: "var(--accent)",
-  planned: "rgba(193, 90, 46, 0.35)",
-  none: "rgba(255, 255, 255, 0.08)",
+  planned: "var(--line-strong)",
+  none: "var(--card-2)",
+};
+
+const STATUS_TEXT: Record<HeatmapDay["status"], string> = {
+  done: "var(--accent-ink)",
+  planned: "var(--on-ink)",
+  none: "var(--on-ink-faint)",
 };
 
 export default function Heatmap({ days }: { days: HeatmapDay[] }) {
@@ -21,7 +27,7 @@ export default function Heatmap({ days }: { days: HeatmapDay[] }) {
           >
             <span
               className="text-[9px] font-medium"
-              style={{ color: day.status === "none" ? "var(--on-ink-faint)" : "var(--accent-ink)" }}
+              style={{ color: STATUS_TEXT[day.status] }}
             >
               {dayNum(day.date)}
             </span>

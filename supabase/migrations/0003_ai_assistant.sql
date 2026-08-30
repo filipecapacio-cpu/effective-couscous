@@ -1,4 +1,4 @@
--- Pulso — anamnese, planos gerados por IA e chat do assistente
+-- Onmode — anamnese, planos gerados por IA e chat do assistente
 -- Rode este arquivo no SQL Editor do seu projeto Supabase, depois de já
 -- ter rodado 0001_init.sql e 0002_profile_goal_and_editing.sql.
 

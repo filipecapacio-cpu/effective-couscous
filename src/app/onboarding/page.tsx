@@ -37,7 +37,7 @@ export default function OnboardingPage() {
       </div>
 
       <div className="px-6 pt-7 pb-1">
-        <h1 className="font-bold uppercase tracking-[-0.02em] text-3xl leading-tight">Qual é o seu foco principal agora?</h1>
+        <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-3xl leading-tight">Qual é o seu foco principal agora?</h1>
         <p className="text-sm text-ink-soft mt-2.5">Você pode ajustar isso quando quiser.</p>
       </div>
 
@@ -48,12 +48,12 @@ export default function OnboardingPage() {
             <button
               key={id}
               onClick={() => setPicked(id)}
-              className={`flex items-center gap-4 p-4.5 rounded-[18px] border-[1.5px] text-left transition-colors ${
+              className={`flex items-center gap-4 p-4.5 rounded-lg border-[1.5px] text-left transition-colors ${
                 selected ? "border-accent bg-accent-soft" : "border-line bg-paper hover:border-ink-faint"
               }`}
             >
               <div
-                className={`w-10.5 h-10.5 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                className={`w-10.5 h-10.5 rounded flex items-center justify-center flex-shrink-0 ${
                   selected ? "bg-accent text-accent-ink" : "bg-card text-ink"
                 }`}
               >
@@ -76,7 +76,7 @@ export default function OnboardingPage() {
       <div className="px-6 pb-8 pt-2">
         <button
           onClick={() => router.push(`/cadastro?goal=${picked}`)}
-          className="w-full h-13 rounded-full bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors"
+          className="w-full h-13 rounded bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors"
         >
           Continuar
         </button>

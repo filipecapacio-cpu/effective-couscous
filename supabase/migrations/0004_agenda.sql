@@ -1,4 +1,4 @@
--- Pulso — agenda pessoal (compromissos do dia, com navegação entre dias)
+-- Onmode — agenda pessoal (compromissos do dia, com navegação entre dias)
 -- Rode este arquivo no SQL Editor do seu projeto Supabase, depois dos
 -- anteriores (0001, 0002, 0003).
 

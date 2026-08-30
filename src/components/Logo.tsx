@@ -4,26 +4,27 @@ type LogoProps = {
   withWordmark?: boolean;
 };
 
-/** Marca da Pulso: glifo de pulso + wordmark, no traço geométrico da identidade atual. */
+/** Marca da Onmode: símbolo de três barras + wordmark, geometria fixa do design system. */
 export function Logo({ size = 22, className, withWordmark = true }: LogoProps) {
+  const w1 = size * (12 / 72);
+  const w2 = size * (19 / 72);
+  const w3 = size * (28 / 72);
+  const h1 = size * (34 / 72);
+  const h2 = size * (52 / 72);
+  const h3 = size;
+  const gap = size * (10 / 72);
+
   return (
-    <span className={`inline-flex items-center gap-2 ${className ?? ""}`}>
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 100 100"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={13}
-        strokeLinecap="square"
-        className="flex-shrink-0"
-      >
-        <path d="M6 66 H32" />
-        <path d="M32 66 L50 22" stroke="var(--accent)" />
-        <path d="M50 22 L67 52 H94" strokeLinejoin="miter" />
-      </svg>
+    <span className={`inline-flex items-center gap-2.5 ${className ?? ""}`}>
+      <span className="inline-flex items-end flex-shrink-0" style={{ gap }}>
+        <span style={{ width: w1, height: h1, background: "currentColor" }} />
+        <span style={{ width: w2, height: h2, background: "currentColor" }} />
+        <span style={{ width: w3, height: h3, background: "var(--accent)" }} />
+      </span>
       {withWordmark && (
-        <span className="font-bold uppercase tracking-[-0.02em] leading-none">Pulso</span>
+        <span className="font-display font-bold uppercase tracking-[-0.02em] leading-none">
+          Onmode
+        </span>
       )}
     </span>
   );

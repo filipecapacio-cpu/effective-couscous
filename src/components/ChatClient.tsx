@@ -56,7 +56,7 @@ export default function ChatClient({
       <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
         <SparkleIcon size={28} className="text-ink-faint" />
         <p className="text-ink-soft text-[15px]">
-          O assistente de IA ainda não foi configurado nesta instalação do Pulso.
+          O assistente de IA ainda não foi configurado nesta instalação do Onmode.
         </p>
       </div>
     );
@@ -85,7 +85,7 @@ export default function ChatClient({
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed whitespace-pre-wrap ${
+            className={`max-w-[85%] px-4 py-2.5 rounded-lg text-[15px] leading-relaxed whitespace-pre-wrap ${
               m.role === "user"
                 ? "self-end bg-ink text-paper rounded-br-md"
                 : "self-start bg-card text-ink rounded-bl-md"
@@ -95,7 +95,7 @@ export default function ChatClient({
           </div>
         ))}
         {pending && (
-          <div className="self-start bg-card text-ink-soft px-4 py-2.5 rounded-2xl rounded-bl-md text-[15px]">
+          <div className="self-start bg-card text-ink-soft px-4 py-2.5 rounded-lg rounded-bl-md text-[15px]">
             Pensando…
           </div>
         )}
@@ -115,7 +115,7 @@ export default function ChatClient({
           }}
           rows={1}
           placeholder="Escreva sua pergunta…"
-          className="flex-1 max-h-28 rounded-2xl border border-line bg-paper px-4 py-3 text-[15px] outline-none focus:border-ink resize-none"
+          className="flex-1 max-h-28 rounded-lg border border-line bg-paper px-4 py-3 text-[15px] outline-none focus:border-ink resize-none"
         />
         <button
           onClick={handleSend}

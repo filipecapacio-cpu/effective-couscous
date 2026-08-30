@@ -31,13 +31,13 @@ export default async function AnamnesePage() {
       </Link>
 
       <div className="flex flex-col gap-2">
-        <div className="text-[13px] tracking-[0.1em] uppercase text-ink-soft font-semibold">
+        <div className="text-[13px] font-mono tracking-[0.1em] uppercase text-ink-soft font-semibold">
           Assistente de IA
         </div>
-        <h1 className="font-bold uppercase tracking-[-0.02em] text-3xl">Sua anamnese</h1>
+        <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-3xl">Sua anamnese</h1>
         <p className="text-ink-soft text-[15px]">
           Quanto mais completo, mais preciso fica o treino e a dieta gerados pra você. Isso fica
-          só entre você e o Pulso.
+          só entre você e o Onmode.
         </p>
       </div>
 

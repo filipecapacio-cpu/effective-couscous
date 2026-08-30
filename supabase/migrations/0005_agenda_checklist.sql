@@ -1,4 +1,4 @@
--- Pulso — checklist de subtarefas dentro de cada item da agenda
+-- Onmode — checklist de subtarefas dentro de cada item da agenda
 -- Rode este arquivo no SQL Editor do seu projeto Supabase, depois dos
 -- anteriores (0001 a 0004).
 

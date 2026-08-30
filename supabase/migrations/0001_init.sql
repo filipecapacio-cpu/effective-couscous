@@ -1,4 +1,4 @@
--- Pulso — schema inicial
+-- Onmode — schema inicial
 -- Rode este arquivo no SQL Editor do seu projeto Supabase
 -- (Project -> SQL Editor -> New query -> cole e execute).
 

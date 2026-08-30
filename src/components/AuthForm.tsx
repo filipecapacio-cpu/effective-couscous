@@ -17,9 +17,9 @@ export default function AuthForm({ action, mode, goal }: Props) {
 
   if (state && "needsEmailConfirmation" in state) {
     return (
-      <div className="rounded-2xl bg-card p-5 text-[15px] leading-relaxed">
+      <div className="rounded-lg bg-card p-5 text-[15px] leading-relaxed">
         Quase lá — enviamos um e-mail de confirmação. Clique no link pra
-        ativar sua conta e liberar o Pulso.
+        ativar sua conta e liberar o Onmode.
       </div>
     );
   }
@@ -36,7 +36,7 @@ export default function AuthForm({ action, mode, goal }: Props) {
             type="text"
             required
             autoComplete="name"
-            className="h-12 rounded-xl border border-line bg-paper px-4 text-[15px] outline-none focus:border-ink"
+            className="h-12 rounded border border-line bg-paper px-4 text-[15px] outline-none focus:border-ink"
           />
         </label>
       )}
@@ -48,7 +48,7 @@ export default function AuthForm({ action, mode, goal }: Props) {
           type="email"
           required
           autoComplete="email"
-          className="h-12 rounded-xl border border-line bg-paper px-4 text-[15px] outline-none focus:border-ink"
+          className="h-12 rounded border border-line bg-paper px-4 text-[15px] outline-none focus:border-ink"
         />
       </label>
 
@@ -60,7 +60,7 @@ export default function AuthForm({ action, mode, goal }: Props) {
           required
           minLength={6}
           autoComplete={mode === "cadastro" ? "new-password" : "current-password"}
-          className="h-12 rounded-xl border border-line bg-paper px-4 text-[15px] outline-none focus:border-ink"
+          className="h-12 rounded border border-line bg-paper px-4 text-[15px] outline-none focus:border-ink"
         />
       </label>
 
@@ -71,7 +71,7 @@ export default function AuthForm({ action, mode, goal }: Props) {
       <button
         type="submit"
         disabled={pending}
-        className="h-13 rounded-full bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors disabled:opacity-60"
+        className="h-13 rounded bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors disabled:opacity-60"
       >
         {pending ? "Um momento…" : mode === "cadastro" ? "Criar minha conta" : "Entrar"}
       </button>

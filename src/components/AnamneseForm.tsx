@@ -11,7 +11,7 @@ import {
 } from "@/lib/anamnesis";
 
 const inputClass =
-  "h-11 rounded-xl border border-line bg-paper px-3.5 text-[15px] outline-none focus:border-ink";
+  "h-11 rounded border border-line bg-paper px-3.5 text-[15px] outline-none focus:border-ink";
 const labelClass = "flex flex-col gap-1.5";
 const captionClass = "text-sm font-medium";
 
@@ -24,7 +24,7 @@ export default function AnamneseForm({ initial }: { initial: Anamnesis | null })
   return (
     <form action={formAction} className="flex flex-col gap-6">
       <section className="flex flex-col gap-4">
-        <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-soft">
+        <h2 className="text-[13px] font-mono font-semibold uppercase tracking-[0.06em] text-ink-soft">
           Sobre você
         </h2>
         <div className="grid grid-cols-2 gap-3">
@@ -57,7 +57,7 @@ export default function AnamneseForm({ initial }: { initial: Anamnesis | null })
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-soft">
+        <h2 className="text-[13px] font-mono font-semibold uppercase tracking-[0.06em] text-ink-soft">
           Sua rotina
         </h2>
         <div className="flex flex-col gap-3">
@@ -98,7 +98,7 @@ export default function AnamneseForm({ initial }: { initial: Anamnesis | null })
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-soft">
+        <h2 className="text-[13px] font-mono font-semibold uppercase tracking-[0.06em] text-ink-soft">
           Cuidados
         </h2>
         <div className="flex flex-col gap-3">
@@ -109,7 +109,7 @@ export default function AnamneseForm({ initial }: { initial: Anamnesis | null })
               defaultValue={initial?.injuries ?? ""}
               rows={2}
               placeholder="Ex: dor no joelho direito, evitar impacto"
-              className="rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[15px] outline-none focus:border-ink resize-none"
+              className="rounded border border-line bg-paper px-3.5 py-2.5 text-[15px] outline-none focus:border-ink resize-none"
             />
           </label>
           <label className={labelClass}>
@@ -119,7 +119,7 @@ export default function AnamneseForm({ initial }: { initial: Anamnesis | null })
               defaultValue={initial?.dietary_restrictions ?? ""}
               rows={2}
               placeholder="Ex: vegetariano, intolerância a lactose"
-              className="rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[15px] outline-none focus:border-ink resize-none"
+              className="rounded border border-line bg-paper px-3.5 py-2.5 text-[15px] outline-none focus:border-ink resize-none"
             />
           </label>
           <label className={labelClass}>
@@ -129,7 +129,7 @@ export default function AnamneseForm({ initial }: { initial: Anamnesis | null })
               defaultValue={initial?.notes ?? ""}
               rows={2}
               placeholder="O que mais achar importante contar pro seu coach"
-              className="rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[15px] outline-none focus:border-ink resize-none"
+              className="rounded border border-line bg-paper px-3.5 py-2.5 text-[15px] outline-none focus:border-ink resize-none"
             />
           </label>
         </div>
@@ -142,7 +142,7 @@ export default function AnamneseForm({ initial }: { initial: Anamnesis | null })
       <button
         type="submit"
         disabled={pending}
-        className="h-13 rounded-full bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors disabled:opacity-60"
+        className="h-13 rounded bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors disabled:opacity-60"
       >
         {pending ? "Gerando seu plano personalizado…" : "Gerar meu plano com IA"}
       </button>

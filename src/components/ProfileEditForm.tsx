@@ -31,10 +31,10 @@ export default function ProfileEditForm({ name, weeklyGoal }: { name: string; we
     <div className="fixed inset-0 z-20 bg-ink-bg/95 backdrop-blur-sm flex items-end sm:items-center justify-center p-5">
       <form
         action={formAction}
-        className="w-full max-w-sm bg-ink-bg-2 border border-white/10 rounded-[24px] p-6 flex flex-col gap-4"
+        className="w-full max-w-sm bg-ink-bg-2 border border-white/10 rounded-lg p-6 flex flex-col gap-4"
       >
         <div className="flex items-center justify-between">
-          <h2 className="font-bold uppercase tracking-[-0.02em] text-2xl text-on-ink">Editar perfil</h2>
+          <h2 className="font-display font-bold uppercase tracking-[-0.02em] text-2xl text-on-ink">Editar perfil</h2>
           <button type="button" onClick={() => setOpen(false)} aria-label="Fechar">
             <XIcon size={18} className="text-on-ink-soft" />
           </button>
@@ -46,7 +46,7 @@ export default function ProfileEditForm({ name, weeklyGoal }: { name: string; we
             name="name"
             defaultValue={name}
             required
-            className="h-11 rounded-xl bg-white/5 px-3.5 text-[15px] text-on-ink outline-none border border-white/10 focus:border-white/30"
+            className="h-11 rounded bg-white/5 px-3.5 text-[15px] text-on-ink outline-none border border-white/10 focus:border-white/30"
           />
         </label>
 
@@ -59,7 +59,7 @@ export default function ProfileEditForm({ name, weeklyGoal }: { name: string; we
             max={7}
             defaultValue={weeklyGoal}
             required
-            className="h-11 rounded-xl bg-white/5 px-3.5 text-[15px] text-on-ink outline-none border border-white/10 focus:border-white/30"
+            className="h-11 rounded bg-white/5 px-3.5 text-[15px] text-on-ink outline-none border border-white/10 focus:border-white/30"
           />
         </label>
 
@@ -70,7 +70,7 @@ export default function ProfileEditForm({ name, weeklyGoal }: { name: string; we
         <button
           type="submit"
           disabled={pending}
-          className="h-12 rounded-full bg-accent text-accent-ink font-semibold text-[15px] disabled:opacity-60"
+          className="h-12 rounded bg-accent text-accent-ink font-semibold text-[15px] disabled:opacity-60"
         >
           {pending ? "Salvando…" : "Salvar"}
         </button>

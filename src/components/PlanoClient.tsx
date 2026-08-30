@@ -46,14 +46,14 @@ export default function PlanoClient({
     <>
       <header className="px-6 pt-6 pb-1">
         <div className="text-[13px] text-ink-soft">Hoje</div>
-        <h1 className="font-bold uppercase tracking-[-0.02em] text-[28px] mt-1">Seu plano do dia</h1>
+        <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-[28px] mt-1">Seu plano do dia</h1>
       </header>
 
       <div className="px-6 pt-4.5">
-        <div className="flex bg-card rounded-full p-1">
+        <div className="flex bg-card rounded p-1">
           <button
             onClick={() => setTab("treino")}
-            className={`flex-1 text-center py-2.5 rounded-full text-sm font-semibold transition-colors ${
+            className={`flex-1 text-center py-2.5 rounded text-sm font-semibold transition-colors ${
               tab === "treino" ? "bg-accent text-accent-ink" : "text-ink-soft"
             }`}
           >
@@ -61,7 +61,7 @@ export default function PlanoClient({
           </button>
           <button
             onClick={() => setTab("dieta")}
-            className={`flex-1 text-center py-2.5 rounded-full text-sm font-semibold transition-colors ${
+            className={`flex-1 text-center py-2.5 rounded text-sm font-semibold transition-colors ${
               tab === "dieta" ? "bg-accent text-accent-ink" : "text-ink-soft"
             }`}
           >
@@ -96,7 +96,7 @@ export default function PlanoClient({
               ) : (
                 <div
                   key={item.id}
-                  className={`flex items-center gap-3 p-3.5 rounded-2xl ${
+                  className={`flex items-center gap-3 p-3.5 rounded-lg ${
                     item.done ? "bg-card" : "bg-paper border-[1.5px] border-line"
                   }`}
                 >
@@ -142,7 +142,7 @@ export default function PlanoClient({
               <button
                 onClick={() => setAddingExercise(true)}
                 disabled={!workoutId}
-                className="flex items-center justify-center gap-2 p-3.5 rounded-2xl border-[1.5px] border-dashed border-line text-ink-soft text-sm font-semibold disabled:opacity-40"
+                className="flex items-center justify-center gap-2 p-3.5 rounded-lg border-[1.5px] border-dashed border-line text-ink-soft text-sm font-semibold disabled:opacity-40"
               >
                 <PlusIcon size={16} />
                 Adicionar exercício
@@ -170,7 +170,7 @@ export default function PlanoClient({
               ) : (
                 <div
                   key={item.id}
-                  className={`flex items-center gap-3 p-3.5 rounded-2xl ${
+                  className={`flex items-center gap-3 p-3.5 rounded-lg ${
                     item.done ? "bg-card" : "bg-paper border-[1.5px] border-dashed border-line"
                   }`}
                 >
@@ -220,7 +220,7 @@ export default function PlanoClient({
             ) : (
               <button
                 onClick={() => setAddingMeal(true)}
-                className="flex items-center justify-center gap-2 p-3.5 rounded-2xl border-[1.5px] border-dashed border-line text-ink-soft text-sm font-semibold"
+                className="flex items-center justify-center gap-2 p-3.5 rounded-lg border-[1.5px] border-dashed border-line text-ink-soft text-sm font-semibold"
               >
                 <PlusIcon size={16} />
                 Adicionar refeição
@@ -246,7 +246,7 @@ function ExerciseForm({
   const [detail, setDetail] = useState(initial?.detail ?? "");
 
   return (
-    <div className="flex flex-col gap-2 p-3.5 rounded-2xl border-[1.5px] border-ink">
+    <div className="flex flex-col gap-2 p-3.5 rounded-lg border-[1.5px] border-ink">
       <input
         autoFocus
         value={name}
@@ -263,7 +263,7 @@ function ExerciseForm({
       <div className="flex gap-2 mt-1">
         <button
           onClick={() => name.trim() && onSave(name.trim(), detail.trim() || null)}
-          className="flex-1 h-9 rounded-full bg-ink text-paper text-sm font-semibold"
+          className="flex-1 h-9 rounded bg-ink text-paper text-sm font-semibold"
         >
           Salvar
         </button>
@@ -289,7 +289,7 @@ function MealForm({
   const [kcal, setKcal] = useState(initial?.kcal ? String(initial.kcal) : "");
 
   return (
-    <div className="flex flex-col gap-2 p-3.5 rounded-2xl border-[1.5px] border-ink">
+    <div className="flex flex-col gap-2 p-3.5 rounded-lg border-[1.5px] border-ink">
       <input
         autoFocus
         value={name}
@@ -313,7 +313,7 @@ function MealForm({
       <div className="flex gap-2 mt-1">
         <button
           onClick={() => name.trim() && onSave(name.trim(), detail.trim() || null, kcal ? Number(kcal) : null)}
-          className="flex-1 h-9 rounded-full bg-ink text-paper text-sm font-semibold"
+          className="flex-1 h-9 rounded bg-ink text-paper text-sm font-semibold"
         >
           Salvar
         </button>

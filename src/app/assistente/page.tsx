@@ -31,7 +31,7 @@ export default async function AssistentePage() {
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col">
       <header className="px-6 pt-6 pb-3">
         <div className="text-[13px] text-ink-soft">Seu coach</div>
-        <h1 className="font-bold uppercase tracking-[-0.02em] text-[28px] mt-1">Assistente Pulso</h1>
+        <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-[28px] mt-1">Assistente Onmode</h1>
       </header>
 
       <ChatClient

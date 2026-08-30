@@ -15,7 +15,7 @@ export default async function EntrarPage() {
       </Link>
 
       <div className="flex flex-col gap-2">
-        <h1 className="font-bold uppercase tracking-[-0.02em] text-3xl">De volta ao seu ritmo</h1>
+        <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-3xl">De volta ao seu ritmo</h1>
         <p className="text-ink-soft text-[15px]">Entre pra ver o seu ritmo de hoje.</p>
       </div>
 

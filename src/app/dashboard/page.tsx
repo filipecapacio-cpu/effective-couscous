@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
+import { ReadinessBars, readinessModeLabel } from "@/components/ReadinessBars";
 import { CheckIcon, FlameIcon, LogOutIcon, PlayIcon, SparkleIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAnthropicConfigured } from "@/lib/anthropic";
@@ -94,7 +95,7 @@ export default async function DashboardPage() {
       <header className="px-6 pt-6 pb-1.5 flex items-center justify-between">
         <div>
           <div className="text-[13px] text-ink-soft">Bom dia{firstName ? `, ${firstName}` : ""}</div>
-          <div className="font-bold uppercase tracking-[-0.02em] text-2xl mt-0.5">{dateLabel}</div>
+          <div className="font-display font-bold uppercase tracking-[-0.02em] text-2xl mt-0.5">{dateLabel}</div>
         </div>
         <form action={signOut}>
           <button
@@ -111,7 +112,7 @@ export default async function DashboardPage() {
         {showAiCta && !hasAnamnesis && (
           <Link
             href="/anamnese"
-            className="flex items-center gap-3 p-4 rounded-2xl bg-accent-soft"
+            className="flex items-center gap-3 p-4 rounded-lg bg-card border border-accent"
           >
             <SparkleIcon size={20} className="text-accent flex-shrink-0" />
             <div className="flex-1">
@@ -125,30 +126,36 @@ export default async function DashboardPage() {
 
         {/* streak + progress */}
         <div className="flex gap-3">
-          <div className="flex-1 bg-ink-bg rounded-[20px] p-4.5 flex flex-col justify-between h-[132px]">
+          <div className="flex-1 bg-ink-bg rounded-lg p-4.5 flex flex-col justify-between h-[132px]">
             <div className="flex items-center justify-between">
               <span className="text-on-ink-soft text-xs">Sequência</span>
               <FlameIcon size={16} className="text-accent" />
             </div>
-            <div className="font-bold tracking-[-0.02em] text-on-ink text-4xl">
+            <div className="font-display font-bold tracking-[-0.02em] text-on-ink text-4xl">
               {streak} <span className="text-[15px] font-normal text-on-ink-soft">dias</span>
             </div>
           </div>
-          <div className="flex-1 bg-card rounded-[20px] p-4.5 flex flex-col justify-between h-[132px]">
+          <div className="flex-1 bg-card rounded-lg p-4.5 flex flex-col justify-between h-[132px]">
             <span className="text-ink-soft text-xs">Progresso de hoje</span>
-            <div className="font-bold tracking-[-0.02em] text-4xl">{progressPct}%</div>
+            <div className="flex items-end justify-between gap-2">
+              <div className="font-display font-bold tracking-[-0.02em] text-4xl">{progressPct}%</div>
+              <ReadinessBars score={progressPct} size="sm" className="pb-0.5" />
+            </div>
           </div>
+        </div>
+        <div className="text-[11px] font-mono uppercase tracking-[0.1em] text-ink-faint -mt-2.5">
+          {readinessModeLabel(progressPct)}
         </div>
 
         {/* today's training */}
-        <Link href="/plano" className="bg-ink rounded-[22px] p-5 text-paper flex flex-col gap-3.5">
+        <Link href="/plano" className="bg-ink rounded-lg p-5 text-paper flex flex-col gap-3.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-on-ink-soft uppercase tracking-[0.08em]">Treino de hoje</span>
+            <span className="text-xs font-mono text-on-ink-soft uppercase tracking-[0.08em]">Treino de hoje</span>
             {workout?.duration_min && (
               <span className="text-xs text-on-ink-soft">{workout.duration_min} min</span>
             )}
           </div>
-          <div className="font-bold uppercase tracking-[-0.02em] text-2xl">{workout?.title ?? "Sem treino hoje"}</div>
+          <div className="font-display font-bold uppercase tracking-[-0.02em] text-2xl">{workout?.title ?? "Sem treino hoje"}</div>
           <div className="flex items-center justify-between">
             <div className="flex gap-1.5">
               {exList.map((e) => (
@@ -174,7 +181,7 @@ export default async function DashboardPage() {
           </div>
           <div className="flex flex-col gap-2">
             {mealList.map((meal) => (
-              <div key={meal.id} className="flex items-center gap-3 bg-card rounded-2xl px-3.5 py-3">
+              <div key={meal.id} className="flex items-center gap-3 bg-card rounded-lg px-3.5 py-3">
                 <div
                   className={`w-5.5 h-5.5 rounded-full flex items-center justify-center flex-shrink-0 ${
                     meal.done ? "bg-accent" : "border-[1.5px] border-line"
