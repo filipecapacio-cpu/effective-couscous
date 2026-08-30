@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "@/components/icons";
 import {
   addExercise,
@@ -12,6 +12,15 @@ import {
   updateExercise,
   updateMeal,
 } from "@/app/actions/plan";
+import {
+  INTENSITY_LABELS,
+  WORKOUT_MODALITIES,
+  saveWorkoutLog,
+  type IntensityLabel,
+  type WorkoutLog,
+  type WorkoutLogResult,
+  type WorkoutModality,
+} from "@/app/actions/workoutLog";
 
 type Exercise = { id: string; name: string; detail: string | null; done: boolean };
 type Meal = { id: string; name: string; detail: string | null; kcal: number | null; done: boolean };
@@ -23,6 +32,7 @@ type Props = {
   durationMin: number | null;
   exercises: Exercise[];
   meals: Meal[];
+  initialWorkoutLog: WorkoutLog | null;
 };
 
 export default function PlanoClient({
@@ -32,6 +42,7 @@ export default function PlanoClient({
   durationMin,
   exercises,
   meals,
+  initialWorkoutLog,
 }: Props) {
   const [tab, setTab] = useState<"treino" | "dieta">("treino");
   const [, startTransition] = useTransition();
@@ -148,6 +159,8 @@ export default function PlanoClient({
                 Adicionar exercício
               </button>
             )}
+
+            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} />
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -322,5 +335,104 @@ function MealForm({
         </button>
       </div>
     </div>
+  );
+}
+
+const logInputClass = "h-11 rounded border border-line bg-paper px-3.5 text-[15px] outline-none focus:border-ink";
+const logLabelClass = "flex flex-col gap-1.5";
+const logCaptionClass = "text-sm font-medium";
+
+function WorkoutLogForm({ userId, initial }: { userId: string; initial: WorkoutLog | null }) {
+  const [modality, setModality] = useState<WorkoutModality>(initial?.modality ?? "Musculação");
+  const [intensityLabel, setIntensityLabel] = useState<IntensityLabel | null>(
+    initial?.intensityLabel ?? null
+  );
+  const isRest = modality === "Descanso";
+
+  const [state, formAction, pending] = useActionState<WorkoutLogResult | null, FormData>(
+    (_prev, formData) => saveWorkoutLog(formData),
+    null
+  );
+
+  return (
+    <form action={formAction} className="flex flex-col gap-4 p-3.5 rounded-lg border-[1.5px] border-line mt-1">
+      <input type="hidden" name="userId" value={userId} />
+      <span className="text-sm font-semibold">Registrar treino de hoje</span>
+
+      <label className={logLabelClass}>
+        <span className={logCaptionClass}>Modalidade</span>
+        <select
+          name="modality"
+          value={modality}
+          onChange={(e) => setModality(e.target.value as WorkoutModality)}
+          className={logInputClass}
+        >
+          {WORKOUT_MODALITIES.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {!isRest && (
+        <>
+          <div className={logLabelClass}>
+            <span className={logCaptionClass}>Intensidade</span>
+            <div className="flex bg-card rounded p-1">
+              {INTENSITY_LABELS.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setIntensityLabel(label)}
+                  className={`flex-1 text-center py-2 rounded text-sm font-semibold transition-colors ${
+                    intensityLabel === label ? "bg-accent text-accent-ink" : "text-ink-soft"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <input type="hidden" name="intensityLabel" value={intensityLabel ?? ""} />
+          </div>
+
+          <label className={logLabelClass}>
+            <span className={logCaptionClass}>Nota de intensidade (1–10)</span>
+            <input
+              name="intensityScore"
+              type="number"
+              min={1}
+              max={10}
+              defaultValue={initial?.intensityScore ?? undefined}
+              placeholder="Ex: 7"
+              className={logInputClass}
+            />
+          </label>
+
+          <label className={logLabelClass}>
+            <span className={logCaptionClass}>Duração (minutos)</span>
+            <input
+              name="durationMin"
+              type="number"
+              min={0}
+              defaultValue={initial?.durationMin ?? undefined}
+              placeholder="Ex: 45"
+              className={logInputClass}
+            />
+          </label>
+        </>
+      )}
+
+      {state && "error" in state && <div className="text-sm text-accent font-medium">{state.error}</div>}
+      {state && "ok" in state && <div className="text-sm text-ink-soft">Registro salvo.</div>}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="h-11 rounded bg-ink text-paper font-semibold text-[15px] disabled:opacity-60"
+      >
+        {pending ? "Salvando…" : "Salvar registro"}
+      </button>
+    </form>
   );
 }
