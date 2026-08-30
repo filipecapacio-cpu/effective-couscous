@@ -24,8 +24,8 @@ export default async function PlanoPage() {
 
   const date = todayISO();
 
-  // Treino, refeições e o registro do treino feito são independentes — busca tudo ao mesmo tempo.
-  const [{ data: workout }, { data: meals }, { data: workoutLog }] = await Promise.all([
+  // Treino, refeições, registro do treino feito e o plano de IA salvo são independentes — busca tudo ao mesmo tempo.
+  const [{ data: workout }, { data: meals }, { data: workoutLog }, { data: aiPlan }] = await Promise.all([
     supabase
       .from("workouts")
       .select("id, title, duration_min")
@@ -44,6 +44,7 @@ export default async function PlanoPage() {
       .eq("user_id", user.id)
       .eq("date", date)
       .maybeSingle(),
+    supabase.from("ai_plans").select("plan, generated_at").eq("user_id", user.id).maybeSingle(),
   ]);
 
   const { data: exercises } = workout
@@ -73,6 +74,8 @@ export default async function PlanoPage() {
               }
             : null
         }
+        aiPlanSummary={(aiPlan?.plan as { summary?: string } | null)?.summary ?? null}
+        aiPlanGeneratedAt={aiPlan?.generated_at ?? null}
       />
       <BottomNav />
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "@/components/icons";
+import { CheckIcon, PencilIcon, PlusIcon, SparkleIcon, TrashIcon, XIcon } from "@/components/icons";
 import {
   addExercise,
   addMeal,
@@ -35,7 +35,11 @@ type Props = {
   exercises: Exercise[];
   meals: Meal[];
   initialWorkoutLog: WorkoutLog | null;
+  aiPlanSummary: string | null;
+  aiPlanGeneratedAt: string | null;
 };
+
+const AI_PLAN_DATE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" });
 
 export default function PlanoClient({
   workoutId,
@@ -45,6 +49,8 @@ export default function PlanoClient({
   exercises,
   meals,
   initialWorkoutLog,
+  aiPlanSummary,
+  aiPlanGeneratedAt,
 }: Props) {
   const [tab, setTab] = useState<"treino" | "dieta">("treino");
   const [, startTransition] = useTransition();
@@ -61,6 +67,19 @@ export default function PlanoClient({
         <div className="text-[13px] text-ink-soft">Hoje</div>
         <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-[28px] mt-1">Seu plano do dia</h1>
       </header>
+
+      {aiPlanGeneratedAt && (
+        <div className="mx-6 mt-4 flex items-start gap-3 p-4 rounded-lg bg-card border border-accent">
+          <SparkleIcon size={18} className="text-accent flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-semibold">Plano gerado por IA</div>
+            {aiPlanSummary && <div className="text-[12.5px] text-ink-soft mt-0.5">{aiPlanSummary}</div>}
+            <div className="text-[11px] font-mono uppercase tracking-[0.06em] text-ink-faint mt-1.5">
+              Gerado em {AI_PLAN_DATE_FMT.format(new Date(aiPlanGeneratedAt))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="px-6 pt-4.5">
         <div className="flex bg-card rounded p-1">

@@ -185,10 +185,11 @@ async function generateWeekPlan(client: Anthropic, userPrompt: string): Promise<
           system: SYSTEM_PROMPT,
           messages: [{ role: "user", content: userPrompt }],
         },
-        // Timeout bem abaixo do maxDuration da página (60s): se passar disso,
-        // falha rápido e limpo (e aciona o fallback de modelo) em vez de deixar
-        // o usuário com a tela carregando pra sempre até o Vercel matar a função.
-        { timeout: 50_000 }
+        // Timeout bem abaixo do maxDuration da página (60s), com maxRetries: 0
+        // pra não deixar o SDK tentar de novo sozinho (o padrão é até 2 vezes,
+        // o que multiplicaria o timeout e travaria a tela de novo). Se estourar,
+        // falha rápido e limpo, o que também aciona o fallback de modelo.
+        { timeout: 40_000, maxRetries: 0 }
       )
       .finalMessage()
   );
@@ -368,7 +369,7 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
           system: `${CHAT_SYSTEM_PROMPT}\n\n${contextNote}`,
           messages,
         },
-        { timeout: 25_000 }
+        { timeout: 25_000, maxRetries: 0 }
       )
     );
     const textBlock = response.content.find(
