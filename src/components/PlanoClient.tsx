@@ -12,15 +12,15 @@ import {
   updateExercise,
   updateMeal,
 } from "@/app/actions/plan";
+import { saveWorkoutLog } from "@/app/actions/workoutLog";
 import {
   INTENSITY_LABELS,
   WORKOUT_MODALITIES,
-  saveWorkoutLog,
   type IntensityLabel,
   type WorkoutLog,
   type WorkoutLogResult,
   type WorkoutModality,
-} from "@/app/actions/workoutLog";
+} from "@/lib/workoutLog";
 
 type Exercise = { id: string; name: string; detail: string | null; done: boolean };
 type Meal = { id: string; name: string; detail: string | null; kcal: number | null; done: boolean };
