@@ -147,19 +147,45 @@ function extractJsonText(raw: string): string {
   return (fenced ? fenced[1] : raw).trim();
 }
 
+const PRIMARY_MODEL = "claude-opus-5";
+/**
+ * Modelo de reserva - só entra em ação se o claude-opus-5 recusar a chamada
+ * (ex: conta muito nova ainda sem acesso liberado ao modelo mais novo). Nunca
+ * usado por custo/preferência, só pra não deixar a função de IA inteira fora
+ * do ar por causa disso.
+ */
+const FALLBACK_MODEL = "claude-sonnet-5";
+
+async function withModelFallback<T>(fn: (model: string) => Promise<T>): Promise<T> {
+  try {
+    return await fn(PRIMARY_MODEL);
+  } catch (err) {
+    if (err instanceof Anthropic.APIError && !(err instanceof Anthropic.RateLimitError)) {
+      console.error(
+        `[withModelFallback] ${PRIMARY_MODEL} failed (status ${err.status}): ${err.message} - retrying with ${FALLBACK_MODEL}`
+      );
+      return await fn(FALLBACK_MODEL);
+    }
+    throw err;
+  }
+}
+
 /**
  * Pede o plano semanal em streaming (evita timeout em respostas grandes) e valida
  * o JSON manualmente com o schema - mais robusto que depender do recurso de
  * structured output da API pra um schema profundo como esse.
  */
-async function generateWeekPlan(client: Anthropic, userPrompt: string): Promise<WeekPlan> {
-  const stream = client.messages.stream({
-    model: "claude-opus-5",
-    max_tokens: 16000,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userPrompt }],
-  });
-  const response = await stream.finalMessage();
+async function generateWeekPlan(client: Anthropic, userPrompt: string): Promise<{ plan: WeekPlan; model: string }> {
+  const response = await withModelFallback((model) =>
+    client.messages
+      .stream({
+        model,
+        max_tokens: 16000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: userPrompt }],
+      })
+      .finalMessage()
+  );
 
   const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
   if (!textBlock?.text) {
@@ -174,7 +200,7 @@ async function generateWeekPlan(client: Anthropic, userPrompt: string): Promise<
     throw new Error("A resposta da IA não veio em um formato válido.");
   }
 
-  return WeekPlanSchema.parse(raw);
+  return { plan: WeekPlanSchema.parse(raw), model: response.model };
 }
 
 export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<AiActionResult> {
@@ -206,8 +232,9 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
 
   const client = getAnthropicClient();
   let plan: WeekPlan;
+  let model: string;
   try {
-    plan = await generateWeekPlan(client, buildPlanPrompt(parsed, goal));
+    ({ plan, model } = await generateWeekPlan(client, buildPlanPrompt(parsed, goal)));
   } catch (err) {
     console.error("[saveAnamnesisAndGeneratePlan] plan generation failed:", err);
     const detail = err instanceof Anthropic.APIError ? describeAnthropicError(err) : "A resposta da IA veio num formato inesperado.";
@@ -217,7 +244,7 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
   const { error: planError } = await supabase.from("ai_plans").upsert({
     user_id: user.id,
     plan,
-    model: "claude-opus-5",
+    model,
     generated_at: new Date().toISOString(),
   });
   if (planError) {
@@ -254,8 +281,9 @@ export async function regeneratePlan(): Promise<AiActionResult> {
 
   const client = getAnthropicClient();
   let plan: WeekPlan;
+  let model: string;
   try {
-    plan = await generateWeekPlan(client, buildPlanPrompt(anamnesis as Anamnesis, goal));
+    ({ plan, model } = await generateWeekPlan(client, buildPlanPrompt(anamnesis as Anamnesis, goal)));
   } catch (err) {
     console.error("[regeneratePlan] plan generation failed:", err);
     return { error: err instanceof Anthropic.APIError ? describeAnthropicError(err) : "A resposta da IA veio num formato inesperado. Tenta de novo." };
@@ -264,7 +292,7 @@ export async function regeneratePlan(): Promise<AiActionResult> {
   const { error: planError } = await supabase.from("ai_plans").upsert({
     user_id: user.id,
     plan,
-    model: "claude-opus-5",
+    model,
     generated_at: new Date().toISOString(),
   });
   if (planError) {
@@ -326,12 +354,14 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
 
   let reply: string;
   try {
-    const response = await client.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 1024,
-      system: `${CHAT_SYSTEM_PROMPT}\n\n${contextNote}`,
-      messages,
-    });
+    const response = await withModelFallback((model) =>
+      client.messages.create({
+        model,
+        max_tokens: 1024,
+        system: `${CHAT_SYSTEM_PROMPT}\n\n${contextNote}`,
+        messages,
+      })
+    );
     const textBlock = response.content.find(
       (b): b is Anthropic.TextBlock => b.type === "text"
     );
