@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { createClient } from "@/lib/supabase/server";
 import { describeAnthropicError, getAnthropicClient, isAnthropicConfigured } from "@/lib/anthropic";
 import { WeekPlanSchema, type WeekPlan } from "@/lib/ai-plan";
@@ -116,11 +115,67 @@ Regras da dieta:
 Responda em português do Brasil.`;
 }
 
+const PLAN_JSON_FORMAT = `Responda APENAS com um objeto JSON válido, sem markdown, sem crases,
+sem texto antes ou depois - só o JSON puro, exatamente neste formato:
+
+{
+  "summary": "string - 2-3 frases explicando a lógica do plano pro usuário",
+  "monday": DayPlan, "tuesday": DayPlan, "wednesday": DayPlan, "thursday": DayPlan,
+  "friday": DayPlan, "saturday": DayPlan, "sunday": DayPlan
+}
+
+Onde cada DayPlan é:
+{
+  "restDay": true ou false,
+  "workoutTitle": "string",
+  "durationMin": número inteiro (minutos; 0 se restDay),
+  "exercises": [{ "name": "string", "detail": "string, ex: '3 séries · 10-12 reps'" }, ...] (até 10 itens; [] se restDay),
+  "meals": [{ "name": "string, ex: 'Almoço'", "detail": "string, o que comer", "kcal": número inteiro }, ...] (até 6 itens, sempre preenchido mesmo em dia de descanso)
+}`;
+
 const SYSTEM_PROMPT = `Você é o coach de treino e nutrição do Onmode, um app de estilo de vida saudável
 para pessoas que também trabalham ou estudam. Gere planos objetivos, realistas e seguros -
 nunca recomende nada que contrarie uma lesão ou restrição alimentar informada. Não invente
 diagnósticos médicos nem substitua acompanhamento profissional para condições de saúde sérias -
-nesses casos, no campo "summary", recomende buscar um profissional além de dar o plano.`;
+nesses casos, no campo "summary", recomende buscar um profissional além de dar o plano.
+
+${PLAN_JSON_FORMAT}`;
+
+/** Extrai o texto de uma resposta, tolerando o modelo envolver o JSON em ```json ... ```. */
+function extractJsonText(raw: string): string {
+  const fenced = raw.trim().match(/```(?:json)?\s*([\s\S]*?)```/i);
+  return (fenced ? fenced[1] : raw).trim();
+}
+
+/**
+ * Pede o plano semanal em streaming (evita timeout em respostas grandes) e valida
+ * o JSON manualmente com o schema - mais robusto que depender do recurso de
+ * structured output da API pra um schema profundo como esse.
+ */
+async function generateWeekPlan(client: Anthropic, userPrompt: string): Promise<WeekPlan> {
+  const stream = client.messages.stream({
+    model: "claude-opus-5",
+    max_tokens: 16000,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+  const response = await stream.finalMessage();
+
+  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
+  if (!textBlock?.text) {
+    throw new Error("A resposta da IA veio sem conteúdo de texto.");
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(extractJsonText(textBlock.text));
+  } catch (err) {
+    console.error("[generateWeekPlan] failed to parse JSON:", err, "\nraw:", textBlock.text.slice(0, 2000));
+    throw new Error("A resposta da IA não veio em um formato válido.");
+  }
+
+  return WeekPlanSchema.parse(raw);
+}
 
 export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<AiActionResult> {
   const parsed = parseAnamnesisForm(formData);
@@ -152,22 +207,11 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
   const client = getAnthropicClient();
   let plan: WeekPlan;
   try {
-    const response = await client.messages.parse({
-      model: "claude-opus-5",
-      max_tokens: 16000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildPlanPrompt(parsed, goal) }],
-      output_config: { format: zodOutputFormat(WeekPlanSchema) },
-    });
-    if (!response.parsed_output) {
-      return { error: "A resposta da IA veio incompleta. Tenta gerar de novo no seu perfil." };
-    }
-    plan = response.parsed_output;
+    plan = await generateWeekPlan(client, buildPlanPrompt(parsed, goal));
   } catch (err) {
-    console.error("[saveAnamnesisAndGeneratePlan] Anthropic API error:", err);
-    return {
-      error: `${describeAnthropicError(err)} Sua anamnese foi salva - tenta gerar de novo no seu perfil.`,
-    };
+    console.error("[saveAnamnesisAndGeneratePlan] plan generation failed:", err);
+    const detail = err instanceof Anthropic.APIError ? describeAnthropicError(err) : "A resposta da IA veio num formato inesperado.";
+    return { error: `${detail} Sua anamnese foi salva - tenta gerar de novo no seu perfil.` };
   }
 
   const { error: planError } = await supabase.from("ai_plans").upsert({
@@ -211,18 +255,10 @@ export async function regeneratePlan(): Promise<AiActionResult> {
   const client = getAnthropicClient();
   let plan: WeekPlan;
   try {
-    const response = await client.messages.parse({
-      model: "claude-opus-5",
-      max_tokens: 16000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildPlanPrompt(anamnesis as Anamnesis, goal) }],
-      output_config: { format: zodOutputFormat(WeekPlanSchema) },
-    });
-    if (!response.parsed_output) return { error: "A resposta da IA veio incompleta." };
-    plan = response.parsed_output;
+    plan = await generateWeekPlan(client, buildPlanPrompt(anamnesis as Anamnesis, goal));
   } catch (err) {
-    console.error("[regeneratePlan] Anthropic API error:", err);
-    return { error: describeAnthropicError(err) };
+    console.error("[regeneratePlan] plan generation failed:", err);
+    return { error: err instanceof Anthropic.APIError ? describeAnthropicError(err) : "A resposta da IA veio num formato inesperado. Tenta de novo." };
   }
 
   const { error: planError } = await supabase.from("ai_plans").upsert({
