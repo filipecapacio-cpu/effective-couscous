@@ -5,11 +5,12 @@ import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
 import { ReadinessBars, readinessModeLabel } from "@/components/ReadinessBars";
-import { CheckIcon, FlameIcon, LogOutIcon, PlayIcon, SparkleIcon } from "@/components/icons";
+import { WeeklyLoadChart } from "@/components/WeeklyLoadChart";
+import { FlameIcon, LogOutIcon, PlayIcon, SparkleIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAnthropicConfigured } from "@/lib/anthropic";
 import { createClient } from "@/lib/supabase/server";
-import { getStreak, todayISO } from "@/lib/data";
+import { getStreak, getWeeklyLoad, todayISO } from "@/lib/data";
 import { completeOnboarding, ensureTodayPlan } from "@/app/actions/plan";
 import { consumePendingGoal, signOut } from "@/app/actions/auth";
 import type { Goal } from "@/lib/plan";
@@ -46,8 +47,8 @@ export default async function DashboardPage() {
 
   const showAiCta = isAnthropicConfigured();
 
-  // Treino, refeições, sequência e anamnese também são independentes entre si.
-  const [{ data: workout }, { data: meals }, streak, hasAnamnesis] = await Promise.all([
+  // Treino, refeições, sequência, carga da semana e anamnese também são independentes entre si.
+  const [{ data: workout }, { data: meals }, streak, weeklyLoad, hasAnamnesis] = await Promise.all([
     supabase
       .from("workouts")
       .select("id, title, duration_min")
@@ -61,6 +62,7 @@ export default async function DashboardPage() {
       .eq("date", date)
       .order("position"),
     getStreak(supabase, user.id),
+    getWeeklyLoad(supabase, user.id),
     showAiCta
       ? supabase
           .from("anamneses")
@@ -171,30 +173,7 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        {/* meals */}
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[15px] font-semibold">Refeições</span>
-            <span className="text-[13px] text-ink-soft">
-              {doneMeals} de {mealList.length}
-            </span>
-          </div>
-          <div className="flex flex-col gap-2">
-            {mealList.map((meal) => (
-              <div key={meal.id} className="flex items-center gap-3 bg-card rounded-lg px-3.5 py-3">
-                <div
-                  className={`w-5.5 h-5.5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    meal.done ? "bg-accent" : "border-[1.5px] border-line"
-                  }`}
-                >
-                  {meal.done && <CheckIcon size={12} className="text-accent-ink" />}
-                </div>
-                <span className="text-sm flex-1">{meal.name}</span>
-                {meal.kcal && <span className="text-xs text-ink-faint">{meal.kcal} kcal</span>}
-              </div>
-            ))}
-          </div>
-        </div>
+        <WeeklyLoadChart days={weeklyLoad} />
       </main>
 
       <BottomNav />

@@ -56,6 +56,39 @@ export async function getWeekSummary(supabase: Supabase, userId: string) {
   };
 }
 
+export type WeeklyLoadDay = { date: string; modality: string | null; durationMin: number | null };
+
+/** Treino efetivamente registrado (workout_logs) nos últimos 7 dias, incluindo hoje. */
+export async function getWeeklyLoad(supabase: Supabase, userId: string): Promise<WeeklyLoadDay[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - 6);
+  const sinceISO = since.toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("workout_logs")
+    .select("date, modality, duration_min")
+    .eq("user_id", userId)
+    .gte("date", sinceISO);
+
+  if (error) {
+    console.error("[getWeeklyLoad] failed:", error);
+  }
+
+  const byDate = new Map(
+    (data ?? []).map((row) => [row.date as string, { modality: row.modality as string, durationMin: row.duration_min as number | null }])
+  );
+
+  const days: WeeklyLoadDay[] = [];
+  const cursor = new Date(since);
+  for (let i = 0; i < 7; i++) {
+    const key = cursor.toISOString().slice(0, 10);
+    const entry = byDate.get(key);
+    days.push({ date: key, modality: entry?.modality ?? null, durationMin: entry?.durationMin ?? null });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
+}
+
 export type HeatmapDay = { date: string; status: "done" | "planned" | "none" };
 
 /** Últimos 28 dias (mais antigo primeiro) para o histórico visual do perfil. */
