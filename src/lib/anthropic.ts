@@ -34,7 +34,11 @@ export function describeAnthropicError(err: unknown): string {
     return "Não deu pra conectar com a IA agora. Tenta de novo em instantes.";
   }
   if (err instanceof Anthropic.APIError) {
-    return `A IA recusou a chamada (erro ${err.status ?? "desconhecido"}). Tenta de novo em instantes.`;
+    // Erro 4xx que não é nenhum dos casos acima (ex: 400 de request inválida) -
+    // detalhe cru temporário pra facilitar diagnóstico, já que não temos acesso
+    // aos logs do servidor. Pode remover o detalhe assim que estabilizar.
+    const detail = err.error && typeof err.error === "object" ? JSON.stringify(err.error) : err.message;
+    return `A IA recusou a chamada (erro ${err.status ?? "desconhecido"}): ${detail}`;
   }
   return "Não consegui falar com a IA agora. Tenta de novo em instantes.";
 }
