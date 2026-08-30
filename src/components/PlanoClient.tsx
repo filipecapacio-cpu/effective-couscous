@@ -84,7 +84,9 @@ export default function PlanoClient({
       <main className="flex-1 px-6 py-5">
         {tab === "treino" ? (
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between mb-0.5">
+            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} />
+
+            <div className="flex items-center justify-between mb-0.5 mt-1">
               <span className="text-sm text-ink-soft">{workoutTitle}</span>
               {durationMin && <span className="text-sm text-ink-soft">{durationMin} min</span>}
             </div>
@@ -159,8 +161,6 @@ export default function PlanoClient({
                 Adicionar exercício
               </button>
             )}
-
-            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} />
           </div>
         ) : (
           <div className="flex flex-col gap-3">
