@@ -50,6 +50,7 @@ export default function PlanoClient({
   const [editingMeal, setEditingMeal] = useState<string | null>(null);
   const [addingExercise, setAddingExercise] = useState(false);
   const [addingMeal, setAddingMeal] = useState(false);
+  const [trainedToday, setTrainedToday] = useState(Boolean(initialWorkoutLog));
 
   const totalKcal = meals.reduce((sum, m) => sum + (m.kcal ?? 0), 0);
 
@@ -64,11 +65,18 @@ export default function PlanoClient({
         <div className="flex bg-card rounded p-1">
           <button
             onClick={() => setTab("treino")}
-            className={`flex-1 text-center py-2.5 rounded text-sm font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded text-sm font-semibold transition-colors ${
               tab === "treino" ? "bg-accent text-accent-ink" : "text-ink-soft"
             }`}
           >
             Treino
+            {trainedToday && (
+              <CheckIcon
+                size={13}
+                strokeWidth={3}
+                className={tab === "treino" ? "text-accent-ink" : "text-accent"}
+              />
+            )}
           </button>
           <button
             onClick={() => setTab("dieta")}
@@ -84,7 +92,7 @@ export default function PlanoClient({
       <main className="flex-1 px-6 py-5">
         {tab === "treino" ? (
           <div className="flex flex-col gap-3">
-            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} />
+            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} onSaved={() => setTrainedToday(true)} />
 
             <div className="flex items-center justify-between mb-0.5 mt-1">
               <span className="text-sm text-ink-soft">{workoutTitle}</span>
@@ -342,7 +350,15 @@ const logInputClass = "h-11 rounded border border-line bg-paper px-3.5 text-[15p
 const logLabelClass = "flex flex-col gap-1.5";
 const logCaptionClass = "text-sm font-medium";
 
-function WorkoutLogForm({ userId, initial }: { userId: string; initial: WorkoutLog | null }) {
+function WorkoutLogForm({
+  userId,
+  initial,
+  onSaved,
+}: {
+  userId: string;
+  initial: WorkoutLog | null;
+  onSaved?: () => void;
+}) {
   const [modality, setModality] = useState<WorkoutModality>(initial?.modality ?? "Musculação");
   const [intensityLabel, setIntensityLabel] = useState<IntensityLabel | null>(
     initial?.intensityLabel ?? null
@@ -350,7 +366,11 @@ function WorkoutLogForm({ userId, initial }: { userId: string; initial: WorkoutL
   const isRest = modality === "Descanso";
 
   const [state, formAction, pending] = useActionState<WorkoutLogResult | null, FormData>(
-    (_prev, formData) => saveWorkoutLog(formData),
+    async (_prev, formData) => {
+      const result = await saveWorkoutLog(formData);
+      if (result && "ok" in result) onSaved?.();
+      return result;
+    },
     null
   );
 
