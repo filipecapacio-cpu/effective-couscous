@@ -21,6 +21,8 @@ import {
   type WorkoutLogResult,
   type WorkoutModality,
 } from "@/lib/workoutLog";
+import { Logo } from "@/components/Logo";
+import ShareSummaryButton from "@/components/ShareSummaryButton";
 
 type Exercise = { id: string; name: string; detail: string | null; done: boolean };
 type Meal = { id: string; name: string; detail: string | null; kcal: number | null; done: boolean };
@@ -50,7 +52,6 @@ export default function PlanoClient({
   const [editingMeal, setEditingMeal] = useState<string | null>(null);
   const [addingExercise, setAddingExercise] = useState(false);
   const [addingMeal, setAddingMeal] = useState(false);
-  const [trainedToday, setTrainedToday] = useState(Boolean(initialWorkoutLog));
 
   const totalKcal = meals.reduce((sum, m) => sum + (m.kcal ?? 0), 0);
 
@@ -65,18 +66,11 @@ export default function PlanoClient({
         <div className="flex bg-card rounded p-1">
           <button
             onClick={() => setTab("treino")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded text-sm font-semibold transition-colors ${
+            className={`flex-1 text-center py-2.5 rounded text-sm font-semibold transition-colors ${
               tab === "treino" ? "bg-accent text-accent-ink" : "text-ink-soft"
             }`}
           >
             Treino
-            {trainedToday && (
-              <CheckIcon
-                size={13}
-                strokeWidth={3}
-                className={tab === "treino" ? "text-accent-ink" : "text-accent"}
-              />
-            )}
           </button>
           <button
             onClick={() => setTab("dieta")}
@@ -92,7 +86,7 @@ export default function PlanoClient({
       <main className="flex-1 px-6 py-5">
         {tab === "treino" ? (
           <div className="flex flex-col gap-3">
-            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} onSaved={() => setTrainedToday(true)} />
+            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} />
 
             <div className="flex items-center justify-between mb-0.5 mt-1">
               <span className="text-sm text-ink-soft">{workoutTitle}</span>
@@ -350,29 +344,63 @@ const logInputClass = "h-11 rounded border border-line bg-paper px-3.5 text-[15p
 const logLabelClass = "flex flex-col gap-1.5";
 const logCaptionClass = "text-sm font-medium";
 
-function WorkoutLogForm({
-  userId,
-  initial,
-  onSaved,
-}: {
-  userId: string;
-  initial: WorkoutLog | null;
-  onSaved?: () => void;
-}) {
+function WorkoutLogForm({ userId, initial }: { userId: string; initial: WorkoutLog | null }) {
   const [modality, setModality] = useState<WorkoutModality>(initial?.modality ?? "Musculação");
   const [intensityLabel, setIntensityLabel] = useState<IntensityLabel | null>(
     initial?.intensityLabel ?? null
   );
+  const [intensityScore, setIntensityScore] = useState(
+    initial?.intensityScore ? String(initial.intensityScore) : ""
+  );
+  const [durationMin, setDurationMin] = useState(initial?.durationMin ? String(initial.durationMin) : "");
+  const [done, setDone] = useState(Boolean(initial));
   const isRest = modality === "Descanso";
 
   const [state, formAction, pending] = useActionState<WorkoutLogResult | null, FormData>(
     async (_prev, formData) => {
       const result = await saveWorkoutLog(formData);
-      if (result && "ok" in result) onSaved?.();
+      if (result && "ok" in result) setDone(true);
       return result;
     },
     null
   );
+
+  if (done) {
+    const parts: string[] = [modality];
+    if (!isRest) {
+      if (intensityLabel) parts.push(intensityScore ? `${intensityLabel} ${intensityScore}/10` : intensityLabel);
+      if (durationMin) parts.push(`${durationMin} min`);
+    }
+
+    return (
+      <div className="flex flex-col items-center gap-4 p-7 rounded-lg bg-card border-[1.5px] border-accent text-center mt-1">
+        <div className="w-16 h-16 rounded-full bg-accent flex items-center justify-center">
+          <CheckIcon size={30} strokeWidth={3.5} className="text-accent-ink" />
+        </div>
+        <div>
+          <div className="font-display font-bold uppercase tracking-[-0.02em] text-2xl">
+            Treino de hoje registrado
+          </div>
+          <div className="text-sm text-ink-soft mt-1.5">{parts.join(" · ")}</div>
+        </div>
+
+        <div className="w-full flex flex-col gap-2.5 mt-2">
+          <ShareSummaryButton
+            text={`Treinei hoje: ${parts.join(" · ")} 💪 via Onmode`}
+          />
+          <button
+            type="button"
+            onClick={() => setDone(false)}
+            className="h-10 rounded text-sm font-semibold text-ink-soft"
+          >
+            Editar registro
+          </button>
+        </div>
+
+        <Logo size={14} className="text-[13px] text-ink-faint mt-1" />
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-4 p-3.5 rounded-lg border-[1.5px] border-line mt-1">
@@ -423,7 +451,8 @@ function WorkoutLogForm({
               type="number"
               min={1}
               max={10}
-              defaultValue={initial?.intensityScore ?? undefined}
+              value={intensityScore}
+              onChange={(e) => setIntensityScore(e.target.value)}
               placeholder="Ex: 7"
               className={logInputClass}
             />
@@ -435,7 +464,8 @@ function WorkoutLogForm({
               name="durationMin"
               type="number"
               min={0}
-              defaultValue={initial?.durationMin ?? undefined}
+              value={durationMin}
+              onChange={(e) => setDurationMin(e.target.value)}
               placeholder="Ex: 45"
               className={logInputClass}
             />
@@ -444,7 +474,6 @@ function WorkoutLogForm({
       )}
 
       {state && "error" in state && <div className="text-sm text-accent font-medium">{state.error}</div>}
-      {state && "ok" in state && <div className="text-sm text-ink-soft">Registro salvo.</div>}
 
       <button
         type="submit"
