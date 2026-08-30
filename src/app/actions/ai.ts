@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAnthropicClient, isAnthropicConfigured } from "@/lib/anthropic";
 import { WeekPlanSchema, type WeekPlan } from "@/lib/ai-plan";
 import { replaceTodayPlanWithAiPlan } from "@/app/actions/plan";
+import { GOAL_LABEL, type Goal } from "@/lib/plan";
 import {
   ACTIVITY_LABEL,
   EXPERIENCE_LABEL,
@@ -65,14 +66,24 @@ function parseAnamnesisForm(formData: FormData): Anamnesis | { error: string } {
   };
 }
 
-function buildPlanPrompt(a: Anamnesis): string {
+function buildPlanPrompt(a: Anamnesis, goal: Goal | null): string {
+  const weightDirection =
+    a.goal_weight_kg == null
+      ? null
+      : a.goal_weight_kg < a.weight_kg
+        ? "perder peso"
+        : a.goal_weight_kg > a.weight_kg
+          ? "ganhar peso"
+          : "manter o peso";
+
   return `Gere um plano semanal (segunda a domingo) de treino e dieta personalizado com base nesta anamnese:
 
+- Objetivo principal escolhido pelo usuário no app: ${goal ? GOAL_LABEL[goal] : "não informado"}
 - Idade: ${a.age} anos
 - Sexo biológico: ${SEX_LABEL[a.sex]}
 - Altura: ${a.height_cm} cm
 - Peso atual: ${a.weight_kg} kg
-- Peso objetivo: ${a.goal_weight_kg ? `${a.goal_weight_kg} kg` : "não informado"}
+- Peso objetivo: ${a.goal_weight_kg ? `${a.goal_weight_kg} kg (${weightDirection})` : "não informado"}
 - Nível de atividade no dia a dia: ${ACTIVITY_LABEL[a.activity_level]}
 - Dias disponíveis pra treinar por semana: ${a.days_per_week}
 - Local de treino: ${TRAINING_LOCATION_LABEL[a.training_location]}
@@ -81,12 +92,28 @@ function buildPlanPrompt(a: Anamnesis): string {
 - Restrições alimentares: ${a.dietary_restrictions ?? "nenhuma informada"}
 - Observações adicionais: ${a.notes ?? "nenhuma"}
 
-Monte exatamente ${a.days_per_week} dias de treino distribuídos pela semana (o resto deve ser
-"restDay": true, com "exercises" e "meals" de descanso ativo/leve se fizer sentido, mas ainda
-assim preencha as refeições de todos os 7 dias). Distribua os dias de treino de forma realista
-(não empilhe todos seguidos sem necessidade). As refeições devem somar uma meta calórica
-coerente com o objetivo e o peso informados. Considere as restrições físicas e alimentares
-como inegociáveis. Responda em português do Brasil.`;
+Regras do treino:
+- Monte exatamente ${a.days_per_week} dias de treino distribuídos pela semana de forma realista
+  (não empilhe todos seguidos sem necessidade); o resto deve ser "restDay": true, com sugestão
+  leve de mobilidade/alongamento se fizer sentido.
+- Use só equipamento compatível com "${TRAINING_LOCATION_LABEL[a.training_location]}" — nunca
+  prescreva barra, halteres ou máquina se o local for em casa sem equipamento.
+- Ajuste séries, reps e complexidade dos exercícios ao nível de experiência informado —
+  iniciante começa com volume/complexidade menor, avançado pode ter mais volume e intensidade.
+- Varie os exercícios ao longo da semana em vez de repetir o mesmo treino em dois dias
+  diferentes, mesmo quando o objetivo/grupo muscular se repete.
+- Ainda assim preencha as refeições de todos os 7 dias, inclusive nos dias de descanso.
+
+Regras da dieta:
+- Estime a meta calórica diária a partir do peso, altura, idade, sexo e nível de atividade
+  informados, e ajuste pro objetivo: déficit moderado (~15-20% abaixo da manutenção) pra quem
+  quer perder peso, superávit moderado (~10-15% acima) pra quem quer ganhar peso, manutenção
+  nos demais casos.
+- Distribua essa meta calórica entre as refeições do dia de forma equilibrada.
+- Considere as restrições físicas e alimentares como inegociáveis — nunca sugira algo que as
+  contrarie.
+
+Responda em português do Brasil.`;
 }
 
 const SYSTEM_PROMPT = `Você é o coach de treino e nutrição do Onmode, um app de estilo de vida saudável
@@ -119,6 +146,9 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
     redirect("/dashboard");
   }
 
+  const { data: profile } = await supabase.from("profiles").select("goal").eq("id", user.id).maybeSingle();
+  const goal = (profile?.goal as Goal | null) ?? null;
+
   const client = getAnthropicClient();
   let plan: WeekPlan;
   try {
@@ -126,7 +156,7 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
       model: "claude-opus-5",
       max_tokens: 16000,
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildPlanPrompt(parsed) }],
+      messages: [{ role: "user", content: buildPlanPrompt(parsed, goal) }],
       output_config: { format: zodOutputFormat(WeekPlanSchema) },
     });
     if (!response.parsed_output) {
@@ -172,12 +202,12 @@ export async function regeneratePlan(): Promise<AiActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sessão expirada. Entre novamente." };
 
-  const { data: anamnesis } = await supabase
-    .from("anamneses")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [{ data: anamnesis }, { data: profile }] = await Promise.all([
+    supabase.from("anamneses").select("*").eq("user_id", user.id).maybeSingle(),
+    supabase.from("profiles").select("goal").eq("id", user.id).maybeSingle(),
+  ]);
   if (!anamnesis) return { error: "Complete a anamnese primeiro." };
+  const goal = (profile?.goal as Goal | null) ?? null;
 
   const client = getAnthropicClient();
   let plan: WeekPlan;
@@ -186,7 +216,7 @@ export async function regeneratePlan(): Promise<AiActionResult> {
       model: "claude-opus-5",
       max_tokens: 16000,
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildPlanPrompt(anamnesis as Anamnesis) }],
+      messages: [{ role: "user", content: buildPlanPrompt(anamnesis as Anamnesis, goal) }],
       output_config: { format: zodOutputFormat(WeekPlanSchema) },
     });
     if (!response.parsed_output) return { error: "A resposta da IA veio incompleta." };
@@ -234,8 +264,9 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sessão expirada. Entre novamente." };
 
-  const [{ data: anamnesis }, { data: history }] = await Promise.all([
+  const [{ data: anamnesis }, { data: profile }, { data: history }] = await Promise.all([
     supabase.from("anamneses").select("*").eq("user_id", user.id).maybeSingle(),
+    supabase.from("profiles").select("goal").eq("id", user.id).maybeSingle(),
     supabase
       .from("chat_messages")
       .select("role, content")
@@ -243,9 +274,10 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
       .order("created_at", { ascending: true })
       .limit(20),
   ]);
+  const goal = (profile?.goal as Goal | null) ?? null;
 
   const contextNote = anamnesis
-    ? `Contexto do usuário - idade ${anamnesis.age}, objetivo de peso ${anamnesis.goal_weight_kg ?? "não informado"}, nível ${EXPERIENCE_LABEL[anamnesis.experience_level as ExperienceLevel]}, treina em ${TRAINING_LOCATION_LABEL[anamnesis.training_location as TrainingLocation]}, ${anamnesis.days_per_week}x/semana. Restrições: ${anamnesis.injuries ?? "-"} / ${anamnesis.dietary_restrictions ?? "-"}.`
+    ? `Contexto do usuário - objetivo principal ${goal ? GOAL_LABEL[goal] : "não informado"}, idade ${anamnesis.age}, objetivo de peso ${anamnesis.goal_weight_kg ?? "não informado"}, nível ${EXPERIENCE_LABEL[anamnesis.experience_level as ExperienceLevel]}, treina em ${TRAINING_LOCATION_LABEL[anamnesis.training_location as TrainingLocation]}, ${anamnesis.days_per_week}x/semana. Restrições: ${anamnesis.injuries ?? "-"} / ${anamnesis.dietary_restrictions ?? "-"}.`
     : "O usuário ainda não preencheu a anamnese - sugira preencher se a pergunta depender disso.";
 
   const client = getAnthropicClient();
