@@ -8,6 +8,7 @@ import AgendaClient from "@/components/AgendaClient";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
+import { ensureRecurringAgendaForDate } from "@/app/actions/agenda";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DATE_LABEL = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
@@ -39,9 +40,11 @@ export default async function AgendaPage({
   const date = rawDate && DATE_RE.test(rawDate) ? rawDate : todayISO();
   const isToday = date === todayISO();
 
+  await ensureRecurringAgendaForDate(user.id, date);
+
   const { data: items } = await supabase
     .from("agenda_items")
-    .select("id, title, time, notes, done, agenda_checklist_items(id, text, done, position)")
+    .select("id, title, time, notes, done, recurring_item_id, agenda_checklist_items(id, text, done, position)")
     .eq("user_id", user.id)
     .eq("date", date)
     .order("time", { ascending: true, nullsFirst: false })

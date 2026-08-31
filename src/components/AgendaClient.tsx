@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckIcon, ChevronRightIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "@/components/icons";
+import { CheckIcon, ChevronRightIcon, PencilIcon, PlusIcon, RepeatIcon, TrashIcon, XIcon } from "@/components/icons";
 import {
   addAgendaItem,
   addChecklistItem,
+  addRecurringAgendaItem,
   deleteAgendaItem,
   deleteChecklistItem,
+  stopRecurringAgendaItem,
   toggleAgendaItem,
   toggleChecklistItem,
   updateAgendaItem,
@@ -19,8 +21,12 @@ type Item = {
   time: string | null;
   notes: string | null;
   done: boolean;
+  recurring_item_id: string | null;
   agenda_checklist_items: ChecklistItem[];
 };
+
+const WEEKDAY_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const WEEKDAY_FULL = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 export default function AgendaClient({
   userId,
@@ -77,12 +83,25 @@ export default function AgendaClient({
                   <span className={`text-[15px] font-semibold truncate ${item.done && "text-ink-soft"}`}>
                     {item.title}
                   </span>
+                  {item.recurring_item_id && (
+                    <RepeatIcon size={13} strokeWidth={2} className="text-ink-faint flex-shrink-0" />
+                  )}
                 </div>
                 {item.notes && <div className="text-[13px] text-ink-soft mt-0.5">{item.notes}</div>}
               </div>
               <button onClick={() => setEditingId(item.id)} aria-label="Editar" className="text-ink-faint flex-shrink-0">
                 <PencilIcon size={16} />
               </button>
+              {item.recurring_item_id && (
+                <button
+                  onClick={() => startTransition(() => stopRecurringAgendaItem(item.recurring_item_id as string))}
+                  aria-label="Parar de repetir"
+                  title="Parar de repetir esta tarefa"
+                  className="text-ink-faint flex-shrink-0"
+                >
+                  <RepeatIcon size={16} />
+                </button>
+              )}
               <button
                 onClick={() => startTransition(() => deleteAgendaItem(item.id))}
                 aria-label="Remover"
@@ -106,9 +125,15 @@ export default function AgendaClient({
 
       {adding ? (
         <ItemForm
+          date={date}
+          allowRecurring
           onCancel={() => setAdding(false)}
-          onSave={(title, time, notes) => {
-            startTransition(() => addAgendaItem(userId, date, title, time, notes));
+          onSave={(title, time, notes, weekdays) => {
+            startTransition(() =>
+              weekdays
+                ? addRecurringAgendaItem(userId, date, title, time, notes, weekdays)
+                : addAgendaItem(userId, date, title, time, notes)
+            );
             setAdding(false);
           }}
         />
@@ -210,16 +235,27 @@ function ChecklistSection({
 
 function ItemForm({
   initial,
+  date,
+  allowRecurring,
   onSave,
   onCancel,
 }: {
   initial?: { title: string; time: string | null; notes: string | null };
-  onSave: (title: string, time: string | null, notes: string | null) => void;
+  date?: string;
+  allowRecurring?: boolean;
+  onSave: (title: string, time: string | null, notes: string | null, weekdays: number[] | null) => void;
   onCancel: () => void;
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [repeats, setRepeats] = useState(false);
+  const todayWeekday = date ? new Date(`${date}T12:00:00Z`).getUTCDay() : new Date().getDay();
+  const [weekdays, setWeekdays] = useState<number[]>([todayWeekday]);
+
+  function toggleWeekday(day: number) {
+    setWeekdays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()));
+  }
 
   return (
     <div className="flex flex-col gap-2 p-3.5 rounded-lg border-[1.5px] border-ink">
@@ -244,9 +280,50 @@ function ItemForm({
         placeholder="Detalhes (opcional)"
         className="h-9 rounded-lg bg-paper px-3 text-[13px] text-ink-soft outline-none"
       />
+
+      {allowRecurring && (
+        <div className="flex flex-col gap-2 mt-0.5">
+          <button
+            type="button"
+            onClick={() => setRepeats((v) => !v)}
+            className="flex items-center gap-2 self-start"
+          >
+            <div
+              className={`w-4.5 h-4.5 rounded flex items-center justify-center flex-shrink-0 ${
+                repeats ? "bg-accent" : "border-[1.5px] border-line"
+              }`}
+            >
+              {repeats && <CheckIcon size={11} className="text-accent-ink" />}
+            </div>
+            <span className="text-[13px] font-semibold text-ink-soft">Repetir toda semana</span>
+          </button>
+
+          {repeats && (
+            <div className="flex gap-1.5">
+              {WEEKDAY_LABELS.map((label, day) => (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => toggleWeekday(day)}
+                  aria-label={WEEKDAY_FULL[day]}
+                  className={`w-8 h-8 rounded-full text-[12.5px] font-semibold flex-shrink-0 ${
+                    weekdays.includes(day) ? "bg-accent text-accent-ink" : "bg-card text-ink-soft"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-2 mt-1">
         <button
-          onClick={() => title.trim() && onSave(title.trim(), time || null, notes.trim() || null)}
+          onClick={() =>
+            title.trim() &&
+            onSave(title.trim(), time || null, notes.trim() || null, repeats && weekdays.length > 0 ? weekdays : null)
+          }
           className="flex-1 h-9 rounded bg-ink text-paper text-sm font-semibold"
         >
           Salvar

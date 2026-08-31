@@ -18,6 +18,80 @@ async function nextPosition(
   return (data?.[0]?.position ?? -1) + 1;
 }
 
+/**
+ * Garante que as tarefas recorrentes que caem no dia da semana de `date`
+ * já existam como itens de verdade na agenda daquele dia. Idempotente -
+ * chamar de novo pro mesmo dia não duplica nada (índice único cuida disso).
+ */
+export async function ensureRecurringAgendaForDate(userId: string, date: string) {
+  const supabase = await createClient();
+  const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+
+  const { data: rules, error: rulesError } = await supabase
+    .from("agenda_recurring_items")
+    .select("id, title, time, notes, weekdays")
+    .eq("user_id", userId)
+    .eq("active", true)
+    .contains("weekdays", [weekday]);
+
+  if (rulesError) {
+    console.error("[ensureRecurringAgendaForDate] failed to read rules:", rulesError);
+    return;
+  }
+  if (!rules || rules.length === 0) return;
+
+  const rows = rules.map((rule) => ({
+    user_id: userId,
+    date,
+    title: rule.title,
+    time: rule.time,
+    notes: rule.notes,
+    recurring_item_id: rule.id,
+    position: 0,
+  }));
+
+  const { error } = await supabase
+    .from("agenda_items")
+    .upsert(rows, { onConflict: "recurring_item_id,date", ignoreDuplicates: true });
+  if (error) {
+    console.error("[ensureRecurringAgendaForDate] failed to materialize:", error);
+  }
+}
+
+export async function addRecurringAgendaItem(
+  userId: string,
+  date: string,
+  title: string,
+  time: string | null,
+  notes: string | null,
+  weekdays: number[]
+) {
+  if (!title.trim() || weekdays.length === 0) return;
+  const supabase = await createClient();
+  const { error } = await supabase.from("agenda_recurring_items").insert({
+    user_id: userId,
+    title: title.trim(),
+    time,
+    notes,
+    weekdays,
+  });
+  if (error) {
+    console.error("[addRecurringAgendaItem] failed:", error);
+    return;
+  }
+  // Materializa já a ocorrência de hoje (ou do dia que o usuário está vendo) se ele repetir nesse dia.
+  await ensureRecurringAgendaForDate(userId, date);
+  revalidatePath("/agenda");
+}
+
+/** Para de repetir - a regra some, mas as ocorrências já criadas continuam na agenda como itens avulsos. */
+export async function stopRecurringAgendaItem(recurringItemId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("agenda_recurring_items").delete().eq("id", recurringItemId);
+  if (error) console.error("[stopRecurringAgendaItem] failed:", error);
+  revalidatePath("/agenda");
+}
+
 export async function addAgendaItem(
   userId: string,
   date: string,
