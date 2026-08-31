@@ -254,3 +254,22 @@ export function RepeatIcon({ size = 24, className, strokeWidth = 1.8 }: IconProp
     </svg>
   );
 }
+
+export function MailIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <rect x="2.5" y="5" width="19" height="14" rx="1.5" />
+      <path d="M3.5 6.5L12 13l8.5-6.5" />
+    </svg>
+  );
+}
+
+export function InstagramIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4.2" />
+      <circle cx="17.3" cy="6.7" r="0.65" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
