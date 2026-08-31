@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import ContactIcons from "@/components/ContactIcons";
 import {
   DumbbellIcon,
-  InstagramIcon,
   LeafIcon,
-  MailIcon,
   PeopleIcon,
   PulseIcon,
   QuoteIcon,
@@ -198,26 +197,7 @@ export default function LandingPage() {
             <p className="text-on-ink-soft text-sm max-w-[280px] leading-relaxed">
               Performance discreta pra quem também vive de agenda cheia.
             </p>
-            <div className="flex items-center gap-2.5 mt-1">
-              <a
-                href="mailto:suporteonmode@gmail.com"
-                aria-label="Enviar e-mail pra Onmode"
-                title="suporteonmode@gmail.com"
-                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-              >
-                <MailIcon size={16} className="text-on-ink" />
-              </a>
-              <a
-                href="https://instagram.com/useonmode"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Onmode no Instagram"
-                title="@useonmode"
-                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-              >
-                <InstagramIcon size={16} className="text-on-ink" />
-              </a>
-            </div>
+            <ContactIcons />
           </div>
           <div className="flex flex-col gap-3">
             <div className="text-xs font-mono text-on-ink-soft uppercase tracking-[0.1em] mb-1.5">Produto</div>
