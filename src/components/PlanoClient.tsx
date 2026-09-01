@@ -23,6 +23,7 @@ import {
 } from "@/lib/workoutLog";
 import { Logo } from "@/components/Logo";
 import ShareSummaryButton from "@/components/ShareSummaryButton";
+import WorkoutShareCardPanel from "@/components/WorkoutShareCardPanel";
 
 type Exercise = { id: string; name: string; detail: string | null; done: boolean };
 type Meal = { id: string; name: string; detail: string | null; kcal: number | null; done: boolean };
@@ -403,10 +404,17 @@ function WorkoutLogForm({ userId, initial }: { userId: string; initial: WorkoutL
           <div className="text-sm text-ink-soft mt-1.5">{parts.join(" · ")}</div>
         </div>
 
-        <div className="w-full flex flex-col gap-2.5 mt-2">
-          <ShareSummaryButton
-            text={`Treinei hoje: ${parts.join(" · ")} 💪 via Onmode`}
-          />
+        <div className="w-full flex flex-col gap-4 mt-2">
+          {isRest ? (
+            <ShareSummaryButton text={`Treinei hoje: ${parts.join(" · ")} 💪 via Onmode`} />
+          ) : (
+            <WorkoutShareCardPanel
+              modality={modality as Exclude<WorkoutModality, "Descanso">}
+              durationMin={durationMin ? Number(durationMin) : null}
+              intensityLabel={intensityLabel}
+              intensityScore={intensityScore ? Number(intensityScore) : null}
+            />
+          )}
           <button
             type="button"
             onClick={() => setDone(false)}

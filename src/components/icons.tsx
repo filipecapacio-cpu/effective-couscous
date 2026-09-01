@@ -244,6 +244,15 @@ export function TrendIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps
   );
 }
 
+export function DownloadIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M12 3v12M7 10l5 5 5-5" />
+      <path d="M4 19h16" />
+    </svg>
+  );
+}
+
 export function RepeatIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
@@ -270,6 +279,81 @@ export function InstagramIcon({ size = 24, className, strokeWidth = 1.8 }: IconP
       <rect x="3" y="3" width="18" height="18" rx="5" />
       <circle cx="12" cy="12" r="4.2" />
       <circle cx="17.3" cy="6.7" r="0.65" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function SwordsIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M4 20L14 10l-3-3M14 10l3-3" />
+      <path d="M20 20L10 10l3-3M10 10l-3-3" />
+    </svg>
+  );
+}
+
+export function FootprintsIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <ellipse cx="8" cy="16" rx="3" ry="4.5" />
+      <ellipse cx="16" cy="8" rx="3" ry="4.5" />
+    </svg>
+  );
+}
+
+export function MoveIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M12 3v18M3 12h18" />
+      <path d="M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
+    </svg>
+  );
+}
+
+export function HeartPulseIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M12 20c-5-3.5-9-7-9-11.2C3 5.8 5 4 7.3 4c1.7 0 3.1 1 4.7 3 1.6-2 3-3 4.7-3C19 4 21 5.8 21 8.8 21 13 17 16.5 12 20Z" />
+      <path d="M5 11h3l1.5-3L12 14l1.5-4 1 1H19" />
+    </svg>
+  );
+}
+
+export function WindIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M3 8h11a3 3 0 1 0-3-3" />
+      <path d="M3 12h14a3 3 0 1 1-3 3" />
+      <path d="M3 16h8" />
+    </svg>
+  );
+}
+
+export function WavesIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M2 8c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0 3.5 2 5 0" />
+      <path d="M2 14c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0 3.5 2 5 0" />
+      <path d="M2 20c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0 3.5 2 5 0" />
+    </svg>
+  );
+}
+
+export function BikeIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <circle cx="5.5" cy="17.5" r="3.5" />
+      <circle cx="18.5" cy="17.5" r="3.5" />
+      <path d="M5.5 17.5L10 8h4l4.5 9.5M10 8l3 5h5.5" />
+    </svg>
+  );
+}
+
+export function YogaIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <circle cx="12" cy="4.5" r="2" />
+      <path d="M12 8v6M12 8l-5 3M12 8l5 3M12 14l-4 6M12 14l4 6" />
     </svg>
   );
 }
