@@ -90,7 +90,7 @@ export default async function DashboardPage() {
   const progressPct = totalSteps > 0 ? Math.round((doneSteps / totalSteps) * 100) : 0;
 
   const firstName = (profile?.name || user.email || "").split(" ")[0].split("@")[0];
-  const dateLabel = WEEKDAY_LONG.format(new Date());
+  const dateLabel = WEEKDAY_LONG.format(new Date(`${date}T12:00:00Z`));
 
   return (
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col">
@@ -173,7 +173,7 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        <WeeklyLoadChart days={weeklyLoad} />
+        <WeeklyLoadChart days={weeklyLoad} today={date} />
       </main>
 
       <BottomNav />

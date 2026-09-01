@@ -1,20 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 import { computeStreak } from "@/lib/plan";
+import { addDaysISO, todayISO } from "@/lib/date";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-export const todayISO = () => new Date().toISOString().slice(0, 10);
+export { todayISO };
 
 /** Sequência de dias com o treino totalmente concluído, olhando os últimos 30 dias. */
 export async function getStreak(supabase: Supabase, userId: string): Promise<number> {
-  const since = new Date();
-  since.setDate(since.getDate() - 30);
+  const today = todayISO();
+  const sinceISO = addDaysISO(today, -30);
 
   const { data } = await supabase
     .from("workouts")
     .select("date, workout_exercises(done)")
     .eq("user_id", userId)
-    .gte("date", since.toISOString().slice(0, 10));
+    .gte("date", sinceISO);
 
   const days = (data ?? []).map((w) => {
     const list = (w.workout_exercises ?? []) as { done: boolean }[];
@@ -25,14 +26,12 @@ export async function getStreak(supabase: Supabase, userId: string): Promise<num
     };
   });
 
-  return computeStreak(days);
+  return computeStreak(days, today);
 }
 
 /** Resumo dos últimos 7 dias (incluindo hoje) para a tela de perfil. */
 export async function getWeekSummary(supabase: Supabase, userId: string) {
-  const since = new Date();
-  since.setDate(since.getDate() - 6);
-  const sinceISO = since.toISOString().slice(0, 10);
+  const sinceISO = addDaysISO(todayISO(), -6);
 
   const { data: workouts } = await supabase
     .from("workouts")
@@ -60,9 +59,7 @@ export type WeeklyLoadDay = { date: string; modality: string | null; durationMin
 
 /** Treino efetivamente registrado (workout_logs) nos últimos 7 dias, incluindo hoje. */
 export async function getWeeklyLoad(supabase: Supabase, userId: string): Promise<WeeklyLoadDay[]> {
-  const since = new Date();
-  since.setDate(since.getDate() - 6);
-  const sinceISO = since.toISOString().slice(0, 10);
+  const sinceISO = addDaysISO(todayISO(), -6);
 
   const { data, error } = await supabase
     .from("workout_logs")
@@ -79,12 +76,10 @@ export async function getWeeklyLoad(supabase: Supabase, userId: string): Promise
   );
 
   const days: WeeklyLoadDay[] = [];
-  const cursor = new Date(since);
   for (let i = 0; i < 7; i++) {
-    const key = cursor.toISOString().slice(0, 10);
+    const key = addDaysISO(sinceISO, i);
     const entry = byDate.get(key);
     days.push({ date: key, modality: entry?.modality ?? null, durationMin: entry?.durationMin ?? null });
-    cursor.setDate(cursor.getDate() + 1);
   }
   return days;
 }
@@ -93,9 +88,7 @@ export type HeatmapDay = { date: string; status: "done" | "planned" | "none" };
 
 /** Últimos 28 dias (mais antigo primeiro) para o histórico visual do perfil. */
 export async function getMonthHeatmap(supabase: Supabase, userId: string): Promise<HeatmapDay[]> {
-  const since = new Date();
-  since.setDate(since.getDate() - 27);
-  const sinceISO = since.toISOString().slice(0, 10);
+  const sinceISO = addDaysISO(todayISO(), -27);
 
   const { data } = await supabase
     .from("workouts")
@@ -113,11 +106,9 @@ export async function getMonthHeatmap(supabase: Supabase, userId: string): Promi
   );
 
   const days: HeatmapDay[] = [];
-  const cursor = new Date(since);
   for (let i = 0; i < 28; i++) {
-    const key = cursor.toISOString().slice(0, 10);
+    const key = addDaysISO(sinceISO, i);
     days.push({ date: key, status: byDate.get(key) ?? "none" });
-    cursor.setDate(cursor.getDate() + 1);
   }
   return days;
 }

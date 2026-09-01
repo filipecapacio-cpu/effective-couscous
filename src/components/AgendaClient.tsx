@@ -13,6 +13,7 @@ import {
   toggleChecklistItem,
   updateAgendaItem,
 } from "@/app/actions/agenda";
+import { weekdayOfISO } from "@/lib/date";
 
 type ChecklistItem = { id: string; text: string; done: boolean };
 type Item = {
@@ -250,7 +251,7 @@ function ItemForm({
   const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [repeats, setRepeats] = useState(false);
-  const todayWeekday = date ? new Date(`${date}T12:00:00Z`).getUTCDay() : new Date().getDay();
+  const todayWeekday = date ? weekdayOfISO(date) : new Date().getDay();
   const [weekdays, setWeekdays] = useState<number[]>([todayWeekday]);
 
   function toggleWeekday(day: number) {

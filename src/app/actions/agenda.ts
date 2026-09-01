@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { weekdayOfISO } from "@/lib/date";
 
 async function nextPosition(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -25,7 +26,7 @@ async function nextPosition(
  */
 export async function ensureRecurringAgendaForDate(userId: string, date: string) {
   const supabase = await createClient();
-  const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+  const weekday = weekdayOfISO(date);
 
   const { data: rules, error: rulesError } = await supabase
     .from("agenda_recurring_items")

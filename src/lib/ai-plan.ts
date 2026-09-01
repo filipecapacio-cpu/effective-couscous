@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { weekdayOfISO } from "@/lib/date";
 
 const ExerciseSchema = z.object({
   name: z.string(),
@@ -47,6 +48,6 @@ const WEEKDAY_KEYS = [
 
 /** Pega o dia do plano semanal correspondente a uma data (YYYY-MM-DD). */
 export function dayPlanFor(plan: WeekPlan, dateISO: string): DayPlan {
-  const weekday = WEEKDAY_KEYS[new Date(`${dateISO}T12:00:00Z`).getUTCDay()];
+  const weekday = WEEKDAY_KEYS[weekdayOfISO(dateISO)];
   return plan[weekday];
 }

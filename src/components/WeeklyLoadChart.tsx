@@ -1,4 +1,5 @@
 import type { WeeklyLoadDay } from "@/lib/data";
+import { weekdayOfISO } from "@/lib/date";
 
 const DAY_LABEL = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
@@ -6,9 +7,9 @@ const DAY_LABEL = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
  * Carga da semana: barras com o treino efetivamente registrado (workout_logs)
  * nos últimos 7 dias — histórico em cinza, descanso em hachura, hoje em accent.
  * Componente 04 do design system Onmode, adaptado pro Dashboard.
+ * `today` vem de quem chama (mesmo "hoje" calculado no fuso do app).
  */
-export function WeeklyLoadChart({ days }: { days: WeeklyLoadDay[] }) {
-  const todayISO = new Date().toISOString().slice(0, 10);
+export function WeeklyLoadChart({ days, today }: { days: WeeklyLoadDay[]; today: string }) {
   const maxDuration = Math.max(60, ...days.map((d) => d.durationMin ?? 0));
 
   return (
@@ -18,7 +19,7 @@ export function WeeklyLoadChart({ days }: { days: WeeklyLoadDay[] }) {
       </span>
       <div className="flex items-end gap-2 h-16">
         {days.map((day) => {
-          const isToday = day.date === todayISO;
+          const isToday = day.date === today;
           const isRest = day.modality === "Descanso";
           const hasLog = day.durationMin !== null && day.durationMin > 0;
 
@@ -44,8 +45,8 @@ export function WeeklyLoadChart({ days }: { days: WeeklyLoadDay[] }) {
       </div>
       <div className="flex gap-2">
         {days.map((day) => {
-          const isToday = day.date === todayISO;
-          const weekday = new Date(`${day.date}T12:00:00`).getDay();
+          const isToday = day.date === today;
+          const weekday = weekdayOfISO(day.date);
           return (
             <span
               key={day.date}

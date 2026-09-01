@@ -1,3 +1,5 @@
+import { addDaysISO } from "@/lib/date";
+
 export type Goal = "performance" | "emagrecimento" | "massa" | "habito";
 
 export const GOAL_LABEL: Record<Goal, string> = {
@@ -33,21 +35,21 @@ type WorkoutDay = { date: string; allDone: boolean; hasExercises: boolean };
 /**
  * Dias consecutivos (terminando hoje ou ontem) com o treino do dia
  * totalmente concluído. Um treino de hoje ainda em aberto não quebra a
- * sequência — só não conta ainda.
+ * sequência — só não conta ainda. `todayISO` vem de quem chama pra usar
+ * sempre o mesmo "hoje" (fuso do app, não do servidor).
  */
-export function computeStreak(days: WorkoutDay[]): number {
+export function computeStreak(days: WorkoutDay[], todayISO: string): number {
   const byDate = new Map(days.map((d) => [d.date, d]));
   let streak = 0;
-  const cursor = new Date();
+  let cursorISO = todayISO;
 
   for (let i = 0; i < 365; i++) {
-    const key = cursor.toISOString().slice(0, 10);
-    const day = byDate.get(key);
+    const day = byDate.get(cursorISO);
     const isToday = i === 0;
 
     if (!day || !day.hasExercises) {
       if (isToday) {
-        cursor.setDate(cursor.getDate() - 1);
+        cursorISO = addDaysISO(cursorISO, -1);
         continue;
       }
       break;
@@ -61,7 +63,7 @@ export function computeStreak(days: WorkoutDay[]): number {
       break;
     }
 
-    cursor.setDate(cursor.getDate() - 1);
+    cursorISO = addDaysISO(cursorISO, -1);
   }
 
   return streak;

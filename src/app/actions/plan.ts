@@ -4,10 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { STARTER_EXERCISES, STARTER_MEALS, starterWorkoutTitle, type Goal } from "@/lib/plan";
 import { dayPlanFor, type WeekPlan } from "@/lib/ai-plan";
+import { todayISO } from "@/lib/date";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
-
-const todayISO = () => new Date().toISOString().slice(0, 10);
 
 type DayContent = {
   title: string;

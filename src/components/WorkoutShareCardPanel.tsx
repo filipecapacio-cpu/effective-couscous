@@ -5,8 +5,9 @@ import { toPng } from "html-to-image";
 import WorkoutShareCard from "@/components/WorkoutShareCard";
 import { DownloadIcon, ShareIcon } from "@/components/icons";
 import type { IntensityLabel, WorkoutModality } from "@/lib/workoutLog";
+import { APP_TIME_ZONE } from "@/lib/date";
 
-const DATE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" });
+const DATE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", timeZone: APP_TIME_ZONE });
 
 function todayLabel() {
   return DATE_FMT.format(new Date()).replace(".", "").toUpperCase();

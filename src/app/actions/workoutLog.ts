@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { INTENSITY_LABELS, WORKOUT_MODALITIES, type IntensityLabel, type WorkoutModality, type WorkoutLogResult } from "@/lib/workoutLog";
-
-const todayISO = () => new Date().toISOString().slice(0, 10);
+import { todayISO } from "@/lib/date";
 
 /** Registra (ou atualiza) o treino que o usuário efetivamente fez hoje. Não mexe na recomendação/plano. */
 export async function saveWorkoutLog(formData: FormData): Promise<WorkoutLogResult> {

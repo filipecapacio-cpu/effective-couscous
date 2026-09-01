@@ -9,19 +9,10 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { ensureRecurringAgendaForDate } from "@/app/actions/agenda";
+import { addDaysISO, todayISO } from "@/lib/date";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DATE_LABEL = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function shiftDate(dateISO: string, days: number): string {
-  const d = new Date(`${dateISO}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 export default async function AgendaPage({
   searchParams,
@@ -59,7 +50,7 @@ export default async function AgendaPage({
         <div className="text-[13px] text-ink-soft">Agenda</div>
         <div className="flex items-center justify-between mt-1">
           <Link
-            href={`/agenda?date=${shiftDate(date, -1)}`}
+            href={`/agenda?date=${addDaysISO(date, -1)}`}
             aria-label="Dia anterior"
             className="w-9 h-9 rounded-full bg-card flex items-center justify-center flex-shrink-0"
           >
@@ -69,7 +60,7 @@ export default async function AgendaPage({
             {isToday ? "Hoje" : dateLabel}
           </h1>
           <Link
-            href={`/agenda?date=${shiftDate(date, 1)}`}
+            href={`/agenda?date=${addDaysISO(date, 1)}`}
             aria-label="Próximo dia"
             className="w-9 h-9 rounded-full bg-card flex items-center justify-center flex-shrink-0"
           >
