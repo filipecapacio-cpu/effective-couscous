@@ -1,13 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { Goal } from "@/lib/plan";
 
 const PENDING_GOAL_COOKIE = "pulso_pending_goal";
 
 export type AuthResult = { error: string } | { needsEmailConfirmation: true } | null;
+export type PasswordResetRequestResult = { error: string } | { sent: true } | null;
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
   const name = String(formData.get("name") ?? "").trim();
@@ -71,6 +72,52 @@ export async function signOut() {
   redirect("/");
 }
 
+/** Origem (protocolo + domínio) do pedido atual, pra montar o link do e-mail. */
+async function siteOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+/** Envia o e-mail de "esqueci minha senha", com o link de volta pro app. */
+export async function requestPasswordReset(formData: FormData): Promise<PasswordResetRequestResult> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) {
+    return { error: "Preencha o e-mail." };
+  }
+
+  const supabase = await createClient();
+  const origin = await siteOrigin();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirm?next=/redefinir-senha`,
+  });
+
+  if (error) {
+    return { error: traduzErro(error.message) };
+  }
+
+  return { sent: true };
+}
+
+/** Define a nova senha - só funciona com a sessão de recuperação vinda do link do e-mail. */
+export async function updatePassword(formData: FormData): Promise<AuthResult> {
+  const password = String(formData.get("password") ?? "");
+  if (!password || password.length < 6) {
+    return { error: "A senha precisa ter pelo menos 6 caracteres." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: traduzErro(error.message) };
+  }
+
+  redirect("/dashboard");
+}
+
 /** Lê (e some com) o objetivo escolhido no onboarding antes do cadastro. */
 export async function consumePendingGoal(): Promise<Goal | null> {
   const cookieStore = await cookies();
@@ -91,5 +138,7 @@ function traduzErro(message: string): string {
   if (message.includes("already registered")) return "Esse e-mail já tem conta. Tente entrar.";
   if (message.includes("Invalid login credentials")) return "E-mail ou senha incorretos.";
   if (message.includes("Password should be")) return "A senha precisa ter pelo menos 6 caracteres.";
+  if (message.includes("For security purposes")) return "Espera um minutinho antes de tentar de novo.";
+  if (message.includes("Auth session missing")) return "Esse link de redefinição expirou ou já foi usado. Peça um novo.";
   return message;
 }

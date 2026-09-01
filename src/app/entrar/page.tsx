@@ -21,6 +21,10 @@ export default async function EntrarPage() {
 
       <AuthForm action={signIn} mode="entrar" />
 
+      <Link href="/esqueci-senha" className="text-sm font-semibold text-ink -mt-2">
+        Esqueceu a senha?
+      </Link>
+
       <p className="text-sm text-ink-soft">
         Ainda não tem conta?{" "}
         <Link href="/onboarding" className="font-semibold text-ink">
