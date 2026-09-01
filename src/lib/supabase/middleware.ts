@@ -41,5 +41,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (isProtected && user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.subscription_status !== "active") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/assinatura";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return response;
 }
