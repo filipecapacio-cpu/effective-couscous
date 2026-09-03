@@ -57,7 +57,7 @@
   // ---------------------------------------------------------------------
   function wireReveal() {
     var targets = document.querySelectorAll(
-      ".card-servico, .concept, .step"
+      ".row-frente, .case, .depoimento-box"
     );
 
     targets.forEach(function (el) {

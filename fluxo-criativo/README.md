@@ -4,6 +4,10 @@ Site de uma página, em HTML/CSS/JS puro (sem build, sem framework), para a
 marca **Fluxo Criativo** — estúdio freelancer de código, design e conteúdo
 para negócios locais de Belém-PA.
 
+Tipografia: [Bitter](https://fonts.google.com/specimen/Bitter) (títulos) +
+[Work Sans](https://fonts.google.com/specimen/Work+Sans) (corpo), carregadas
+via Google Fonts — a única dependência externa do site.
+
 ```
 fluxo-criativo/
 ├── index.html
