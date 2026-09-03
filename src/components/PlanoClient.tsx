@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import { CheckIcon, PencilIcon, PlusIcon, SparkleIcon, TrashIcon, XIcon } from "@/components/icons";
 import {
@@ -38,6 +39,7 @@ type Props = {
   initialWorkoutLog: WorkoutLog | null;
   aiPlanSummary: string | null;
   aiPlanGeneratedAt: string | null;
+  hasShareCardAccess: boolean;
 };
 
 const AI_PLAN_DATE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" });
@@ -52,6 +54,7 @@ export default function PlanoClient({
   initialWorkoutLog,
   aiPlanSummary,
   aiPlanGeneratedAt,
+  hasShareCardAccess,
 }: Props) {
   const [tab, setTab] = useState<"treino" | "dieta">("treino");
   const [, startTransition] = useTransition();
@@ -106,7 +109,7 @@ export default function PlanoClient({
       <main className="flex-1 px-6 py-5">
         {tab === "treino" ? (
           <div className="flex flex-col gap-3">
-            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} />
+            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} hasShareCardAccess={hasShareCardAccess} />
 
             <div className="flex items-center justify-between mb-0.5 mt-1">
               <span className="text-sm text-ink-soft">{workoutTitle}</span>
@@ -364,7 +367,15 @@ const logInputClass = "h-11 rounded border border-line bg-paper px-3.5 text-[15p
 const logLabelClass = "flex flex-col gap-1.5";
 const logCaptionClass = "text-sm font-medium";
 
-function WorkoutLogForm({ userId, initial }: { userId: string; initial: WorkoutLog | null }) {
+function WorkoutLogForm({
+  userId,
+  initial,
+  hasShareCardAccess,
+}: {
+  userId: string;
+  initial: WorkoutLog | null;
+  hasShareCardAccess: boolean;
+}) {
   const [modality, setModality] = useState<WorkoutModality>(initial?.modality ?? "Musculação");
   const [intensityLabel, setIntensityLabel] = useState<IntensityLabel | null>(
     initial?.intensityLabel ?? null
@@ -405,15 +416,20 @@ function WorkoutLogForm({ userId, initial }: { userId: string; initial: WorkoutL
         </div>
 
         <div className="w-full flex flex-col gap-4 mt-2">
-          {isRest ? (
-            <ShareSummaryButton text={`Treinei hoje: ${parts.join(" · ")} 💪 via Onmode`} />
-          ) : (
+          {!isRest && hasShareCardAccess ? (
             <WorkoutShareCardPanel
               modality={modality as Exclude<WorkoutModality, "Descanso">}
               durationMin={durationMin ? Number(durationMin) : null}
               intensityLabel={intensityLabel}
               intensityScore={intensityScore ? Number(intensityScore) : null}
             />
+          ) : (
+            <ShareSummaryButton text={`Treinei hoje: ${parts.join(" · ")} 💪 via Onmode`} />
+          )}
+          {!isRest && !hasShareCardAccess && (
+            <Link href="/assinatura" className="text-sm text-ink-soft text-center -mt-2">
+              Quer o card estilo Strava pra compartilhar? <span className="font-semibold text-ink">Ver planos</span>
+            </Link>
           )}
           <button
             type="button"

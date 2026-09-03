@@ -11,6 +11,7 @@ import { Logo } from "@/components/Logo";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { Anamnesis } from "@/lib/anamnesis";
+import { tierAtLeast, type ProfilePlanTier } from "@/lib/plans";
 
 export default async function AnamnesePage() {
   if (!isSupabaseConfigured()) return <SetupNotice />;
@@ -21,11 +22,12 @@ export default async function AnamnesePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
-  const { data: anamnesis } = await supabase
-    .from("anamneses")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, { data: anamnesis }] = await Promise.all([
+    supabase.from("profiles").select("plan_tier").eq("id", user.id).single(),
+    supabase.from("anamneses").select("*").eq("user_id", user.id).maybeSingle(),
+  ]);
+
+  const hasAiAccess = tierAtLeast(profile?.plan_tier as ProfilePlanTier | null, "pro");
 
   return (
     <div className="mx-auto w-full max-w-lg px-6 py-10 flex flex-col gap-8">
@@ -44,7 +46,20 @@ export default async function AnamnesePage() {
         </p>
       </div>
 
-      <AnamneseForm initial={(anamnesis as Anamnesis | null) ?? null} />
+      {hasAiAccess ? (
+        <AnamneseForm initial={(anamnesis as Anamnesis | null) ?? null} />
+      ) : (
+        <div className="rounded-lg bg-card p-5 text-[15px] leading-relaxed flex flex-col gap-4">
+          O assistente de IA (anamnese + plano semanal gerado automaticamente) é uma funcionalidade
+          dos planos Pro e Elite.
+          <Link
+            href="/assinatura"
+            className="self-start h-11 px-5 inline-flex items-center justify-center rounded bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors"
+          >
+            Ver planos
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

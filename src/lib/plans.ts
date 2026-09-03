@@ -3,6 +3,19 @@
 export type PlanTier = "pro" | "elite";
 export type BillingCycle = "monthly" | "annual";
 
+/** `profiles.plan_tier` inclui "free" também (quem nunca assinou nada). */
+export type ProfilePlanTier = "free" | PlanTier;
+
+const PLAN_TIER_RANK: Record<ProfilePlanTier, number> = { free: 0, pro: 1, elite: 2 };
+
+/**
+ * true se `tier` dá acesso a pelo menos o nível de `min` (free < pro < elite).
+ * Usado pra gatear funcionalidades específicas por plano nas telas do app.
+ */
+export function tierAtLeast(tier: ProfilePlanTier | null | undefined, min: ProfilePlanTier): boolean {
+  return PLAN_TIER_RANK[tier ?? "free"] >= PLAN_TIER_RANK[min];
+}
+
 export const TRIAL_DAYS = 7;
 
 export const PLAN_PRICES: Record<PlanTier, Record<BillingCycle, number>> = {

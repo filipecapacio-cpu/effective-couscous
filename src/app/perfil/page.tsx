@@ -13,6 +13,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAnthropicConfigured } from "@/lib/anthropic";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthHeatmap, getWeekSummary } from "@/lib/data";
+import { PLAN_LABELS, tierAtLeast, type ProfilePlanTier } from "@/lib/plans";
 
 const RANGE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long" });
 
@@ -26,7 +27,7 @@ export default async function PerfilPage() {
   if (!user) redirect("/entrar");
 
   const [{ data: profile }, summary, heatmap] = await Promise.all([
-    supabase.from("profiles").select("name, weekly_goal").eq("id", user.id).single(),
+    supabase.from("profiles").select("name, weekly_goal, plan_tier").eq("id", user.id).single(),
     getWeekSummary(supabase, user.id),
     getMonthHeatmap(supabase, user.id),
   ]);
@@ -35,6 +36,7 @@ export default async function PerfilPage() {
   const initial = (profile?.name || user.email || "?").trim().charAt(0).toUpperCase();
   const hasHistory = summary.daysWithPlan > 0;
   const weeklyGoal = profile?.weekly_goal ?? 4;
+  const hasHeatmapAccess = tierAtLeast(profile?.plan_tier as ProfilePlanTier | null, "elite");
 
   const ringCircumference = 188.5;
   const ringOffset = ringCircumference * (1 - summary.consistency / 100);
@@ -117,7 +119,25 @@ export default async function PerfilPage() {
           <div className="text-[13px] font-mono font-semibold text-on-ink-soft uppercase tracking-[0.06em] mb-3">
             Últimas 4 semanas
           </div>
-          <Heatmap days={heatmap} />
+          {hasHeatmapAccess ? (
+            <Heatmap days={heatmap} />
+          ) : (
+            <Link
+              href="/assinatura"
+              className="flex items-center gap-3 p-4 rounded-lg bg-white/5 border border-white/10"
+            >
+              <SparkleIcon size={18} className="text-accent flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[14px] font-semibold">Histórico completo de consistência</div>
+                <div className="text-[12.5px] text-on-ink-soft mt-0.5">
+                  Veja o mês inteiro de um jeito só. Disponível no plano Elite.
+                </div>
+              </div>
+              <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-on-ink-faint flex-shrink-0">
+                {PLAN_LABELS.elite}
+              </span>
+            </Link>
+          )}
         </div>
 
         {isAnthropicConfigured() && (

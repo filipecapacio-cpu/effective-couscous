@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
 import { ReadinessBars, readinessModeLabel } from "@/components/ReadinessBars";
 import { WeeklyLoadChart } from "@/components/WeeklyLoadChart";
+import { PlanGate } from "@/components/PlanGate";
 import { FlameIcon, LogOutIcon, PlayIcon, SparkleIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAnthropicConfigured } from "@/lib/anthropic";
@@ -13,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStreak, getWeeklyLoad, todayISO } from "@/lib/data";
 import { completeOnboarding, ensureTodayPlan } from "@/app/actions/plan";
 import { consumePendingGoal, signOut } from "@/app/actions/auth";
+import { tierAtLeast, type ProfilePlanTier } from "@/lib/plans";
 import type { Goal } from "@/lib/plan";
 
 const WEEKDAY_LONG = new Intl.DateTimeFormat("pt-BR", {
@@ -32,11 +34,12 @@ export default async function DashboardPage() {
 
   // Perfil e o cookie de onboarding pendente não dependem um do outro.
   const [{ data: profile }, pendingGoal] = await Promise.all([
-    supabase.from("profiles").select("name, goal").eq("id", user.id).single(),
+    supabase.from("profiles").select("name, goal, plan_tier").eq("id", user.id).single(),
     consumePendingGoal(),
   ]);
 
   const goal = (profile?.goal as Goal | null) ?? null;
+  const hasAiAccess = tierAtLeast(profile?.plan_tier as ProfilePlanTier | null, "pro");
   if (pendingGoal && !goal) {
     await completeOnboarding(user.id, pendingGoal);
   } else {
@@ -112,18 +115,26 @@ export default async function DashboardPage() {
 
       <main className="flex-1 px-6 pt-4.5 flex flex-col gap-4">
         {showAiCta && !hasAnamnesis && (
-          <Link
-            href="/anamnese"
-            className="flex items-center gap-3 p-4 rounded-lg bg-card border border-accent"
-          >
-            <SparkleIcon size={20} className="text-accent flex-shrink-0" />
-            <div className="flex-1">
-              <div className="text-[14px] font-semibold">Gere seu plano com IA</div>
-              <div className="text-[12.5px] text-ink-soft mt-0.5">
-                Responda uma anamnese rápida e receba treino e dieta personalizados.
+          hasAiAccess ? (
+            <Link
+              href="/anamnese"
+              className="flex items-center gap-3 p-4 rounded-lg bg-card border border-accent"
+            >
+              <SparkleIcon size={20} className="text-accent flex-shrink-0" />
+              <div className="flex-1">
+                <div className="text-[14px] font-semibold">Gere seu plano com IA</div>
+                <div className="text-[12.5px] text-ink-soft mt-0.5">
+                  Responda uma anamnese rápida e receba treino e dieta personalizados.
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          ) : (
+            <PlanGate
+              minTier="pro"
+              title="Gere seu plano com IA"
+              body="Anamnese rápida e treino + dieta personalizados. Disponível nos planos Pro e Elite."
+            />
+          )
         )}
 
         {/* streak + progress */}
@@ -173,7 +184,15 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        <WeeklyLoadChart days={weeklyLoad} today={date} />
+        {hasAiAccess ? (
+          <WeeklyLoadChart days={weeklyLoad} today={date} />
+        ) : (
+          <PlanGate
+            minTier="pro"
+            title="Carga de treino da semana"
+            body="Gráfico com os últimos 7 dias de treino registrado. Disponível nos planos Pro e Elite."
+          />
+        )}
       </main>
 
       <BottomNav />
