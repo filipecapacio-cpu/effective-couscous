@@ -1,11 +1,17 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import SetupNotice from "@/components/SetupNotice";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { startPlan, stayOnFree, refreshSubscriptionStatus } from "@/app/actions/subscription";
 import { PLAN_FEATURES, PLAN_LABELS, TRIAL_DAYS, formatBRL, planPrice } from "@/lib/plans";
 
 export default async function AssinaturaPage() {
+  if (!isSupabaseConfigured()) return <SetupNotice />;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -121,7 +127,7 @@ export default async function AssinaturaPage() {
 
           <form action={stayOnFree}>
             <button type="submit" className="w-full text-sm text-ink-soft underline underline-offset-2">
-              Continuar no Free (sem Garmin, histórico de 7 dias)
+              Continuar no Free (sem assistente de IA)
             </button>
           </form>
         </>

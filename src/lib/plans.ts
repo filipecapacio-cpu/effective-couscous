@@ -17,16 +17,16 @@ export const PLAN_LABELS: Record<PlanTier, string> = {
 
 export const PLAN_FEATURES: Record<PlanTier, string[]> = {
   pro: [
-    "Sincronização completa Garmin",
-    "Readiness score com recomendação diária",
-    "Histórico ilimitado e gráficos de tendência",
-    "Baseline pessoal calculado",
+    "Assistente de IA: plano semanal gerado automaticamente pela anamnese",
+    "Chat com o assistente pra ajustar o plano quando quiser",
+    "Card de treino estilo Strava pra compartilhar no Instagram/WhatsApp",
+    "Gráfico de carga de treino dos últimos 7 dias",
   ],
   elite: [
     "Tudo do Pro",
-    "Alertas preditivos de overtraining",
-    "Comparação avançada com baseline",
-    "Export de dados",
+    "Histórico completo de consistência (heatmap mensal no Perfil)",
+    "Resumo semanal detalhado de treinos e consistência",
+    "Suporte prioritário",
   ],
 };
 
