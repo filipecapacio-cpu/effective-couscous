@@ -422,6 +422,84 @@ section {
   padding: 5px 12px;
 }
 
+/* ---------- Cases ---------- */
+
+.cases {
+  padding-block: clamp(56px, 9vw, 100px);
+  border-top: 1px solid var(--line);
+}
+
+.case-real {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+@media (min-width: 860px) {
+  .case-real {
+    grid-template-columns: 0.85fr 1.15fr;
+    align-items: start;
+    gap: 48px;
+  }
+}
+
+.case-real-body {
+  max-width: 560px;
+}
+
+.case-badge {
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 5px 12px;
+}
+
+.case-real-body h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(24px, 3.4vw, 32px);
+  margin-top: 16px;
+}
+
+.case-real-niche {
+  color: var(--ink-muted);
+  margin-top: 8px;
+  font-size: 1.02rem;
+}
+
+.case-real-desc {
+  color: var(--ink-muted);
+  margin-top: 16px;
+  max-width: 56ch;
+}
+
+.case-real-body .tags {
+  margin-top: 20px;
+}
+
+.case-real-media {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px;
+}
+
+.case-real-visual {
+  border: 1px solid var(--line);
+  overflow: hidden;
+  clip-path: polygon(0 0, 100% 0, 100% 92%, 92% 100%, 0 100%);
+  align-self: start;
+}
+
+.case-real-visual img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* ---------- Contato ---------- */
 
 .contato {

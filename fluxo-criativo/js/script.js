@@ -56,7 +56,7 @@
   // Entrada suave dos blocos ao rolar a página
   // ---------------------------------------------------------------------
   function wireReveal() {
-    var targets = document.querySelectorAll(".row-frente");
+    var targets = document.querySelectorAll(".row-frente, .case-real");
 
     targets.forEach(function (el) {
       el.classList.add("reveal");
