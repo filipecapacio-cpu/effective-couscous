@@ -13,17 +13,16 @@ fluxo-criativo/
     └── script.js
 ```
 
-## Antes de publicar
+## WhatsApp
 
-Abra `js/script.js` e troque o placeholder pelo número real de WhatsApp
-(só dígitos, com código do país e DDD):
+O número já está configurado em `js/script.js`:
 
 ```js
-var WHATSAPP_NUMBER = "SEU_NUMERO"; // ex: "5591988887777"
+var WHATSAPP_NUMBER = "5591992477891";
 ```
 
-Todos os botões "Chamar no WhatsApp" da página usam essa mesma constante,
-então só precisa trocar em um lugar.
+Todos os botões "Chamar no WhatsApp" da página usam essa mesma constante —
+pra trocar o número no futuro, só precisa mudar em um lugar.
 
 ## Rodando localmente
 

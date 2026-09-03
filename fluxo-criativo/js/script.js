@@ -2,10 +2,9 @@
   "use strict";
 
   // ---------------------------------------------------------------------
-  // ATENÇÃO: troque pelo número real antes de publicar.
   // Formato: código do país + DDD + número, só dígitos (ex: 5591988887777)
   // ---------------------------------------------------------------------
-  var WHATSAPP_NUMBER = "SEU_NUMERO";
+  var WHATSAPP_NUMBER = "5591992477891";
   var WHATSAPP_MESSAGE = "Oi! Vi o site da Fluxo Criativo e quero saber mais.";
 
   function buildWhatsappLink() {
