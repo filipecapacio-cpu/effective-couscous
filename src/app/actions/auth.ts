@@ -45,7 +45,7 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
     return { needsEmailConfirmation: true };
   }
 
-  redirect("/dashboard");
+  redirect("/assinatura");
 }
 
 export async function signIn(formData: FormData): Promise<AuthResult> {

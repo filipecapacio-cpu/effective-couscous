@@ -41,5 +41,31 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (isProtected && user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("has_chosen_plan, subscription_status, trial_ends_at")
+      .eq("id", user.id)
+      .single();
+
+    const trialActive =
+      profile?.subscription_status === "trialing" &&
+      !!profile.trial_ends_at &&
+      new Date(profile.trial_ends_at) > new Date();
+
+    const hasAccess =
+      profile?.has_chosen_plan &&
+      (profile.subscription_status === "active" || trialActive || profile.subscription_status === "none");
+    // "none" só conta como acesso liberado quando o usuário já escolheu
+    // ativamente ficar no Free (has_chosen_plan = true); "past_due" e
+    // "canceled" caem no hard paywall.
+
+    if (!hasAccess) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/assinatura";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return response;
 }
