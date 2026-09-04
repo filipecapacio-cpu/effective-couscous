@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { startPlan, stayOnFree } from "@/app/actions/subscription";
+import { useActionState, useState } from "react";
+import { startPlan, stayOnFree, type StartPlanResult } from "@/app/actions/subscription";
 import { PLAN_FEATURES, PLAN_LABELS, TRIAL_DAYS, formatBRL, planPrice } from "@/lib/plans";
 
 export default function PlanPicker() {
   const [coupon, setCoupon] = useState("");
+  const [state, formAction, pending] = useActionState<StartPlanResult, FormData>(
+    (_prev, formData) => startPlan(formData),
+    null
+  );
 
   return (
     <>
@@ -31,6 +35,8 @@ export default function PlanPicker() {
         )}
       </label>
 
+      {state?.error && <div className="text-sm text-accent font-medium">{state.error}</div>}
+
       <div className="flex flex-col gap-4">
         {(["pro", "elite"] as const).map((tier) => (
           <div key={tier} className="border border-line rounded-lg p-5 flex flex-col gap-4">
@@ -49,22 +55,27 @@ export default function PlanPicker() {
               ))}
             </ul>
 
-            <form action={startPlan} className="flex flex-col gap-2">
+            <form action={formAction} className="flex flex-col gap-2">
               <input type="hidden" name="tier" value={tier} />
               <input type="hidden" name="cycle" value="annual" />
               <input type="hidden" name="coupon" value={coupon} />
               <button
                 type="submit"
-                className="h-12 px-5 inline-flex items-center justify-center rounded bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors"
+                disabled={pending}
+                className="h-12 px-5 inline-flex items-center justify-center rounded bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors disabled:opacity-60"
               >
-                Começar trial — plano anual
+                {pending ? "Um momento…" : "Começar trial — plano anual"}
               </button>
             </form>
-            <form action={startPlan}>
+            <form action={formAction}>
               <input type="hidden" name="tier" value={tier} />
               <input type="hidden" name="cycle" value="monthly" />
               <input type="hidden" name="coupon" value={coupon} />
-              <button type="submit" className="text-sm text-ink-soft underline underline-offset-2">
+              <button
+                type="submit"
+                disabled={pending}
+                className="text-sm text-ink-soft underline underline-offset-2 disabled:opacity-60"
+              >
                 Prefiro o mensal ({formatBRL(planPrice(tier, "monthly"))}/mês)
               </button>
             </form>

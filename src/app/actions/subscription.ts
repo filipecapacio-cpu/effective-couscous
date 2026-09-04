@@ -17,13 +17,15 @@ import { TRIAL_DAYS, applyDiscount, planPrice, type PlanTier, type BillingCycle 
  * no Asaas (1ª cobrança só vence depois do trial) e libera o acesso do
  * usuário imediatamente com subscription_status = "trialing".
  */
-export async function startPlan(formData: FormData) {
+export type StartPlanResult = { error: string } | null;
+
+export async function startPlan(formData: FormData): Promise<StartPlanResult> {
   const tier = String(formData.get("tier")) as PlanTier;
   const cycle = String(formData.get("cycle")) as BillingCycle;
   const couponCode = String(formData.get("coupon") ?? "").trim().toUpperCase();
 
-  if (tier !== "pro" && tier !== "elite") throw new Error("Plano inválido.");
-  if (cycle !== "monthly" && cycle !== "annual") throw new Error("Ciclo inválido.");
+  if (tier !== "pro" && tier !== "elite") return { error: "Plano inválido." };
+  if (cycle !== "monthly" && cycle !== "annual") return { error: "Ciclo inválido." };
 
   const supabase = await createClient();
   const {
@@ -55,17 +57,30 @@ export async function startPlan(formData: FormData) {
     coupon = data;
   }
 
-  const customer = await createAsaasCustomer({
-    name: profile?.name || user.email || "Usuário Onmode",
-    email: user.email ?? "",
-    externalReference: user.id,
-  });
-  const { subscription, invoiceUrl, firstPaymentId } = await createAsaasSubscription({
-    customerId: customer.id,
-    tier,
-    cycle,
-    externalReference: user.id,
-  });
+  let customer: Awaited<ReturnType<typeof createAsaasCustomer>>;
+  let subscription: Awaited<ReturnType<typeof createAsaasSubscription>>["subscription"];
+  let invoiceUrl: string;
+  let firstPaymentId: string;
+  try {
+    customer = await createAsaasCustomer({
+      name: profile?.name || user.email || "Usuário Onmode",
+      email: user.email ?? "",
+      externalReference: user.id,
+    });
+    ({ subscription, invoiceUrl, firstPaymentId } = await createAsaasSubscription({
+      customerId: customer.id,
+      tier,
+      cycle,
+      externalReference: user.id,
+    }));
+  } catch (err) {
+    // O Asaas pode engasgar por um instante (rede, manutenção) - sem isso o
+    // usuário via a tela de erro genérica do Next.js em vez de uma
+    // mensagem decente, e ainda por cima nenhuma assinatura ficava
+    // pendurada pela metade (não gravamos nada no profile antes daqui).
+    console.error("[startPlan] failed to create Asaas subscription:", err);
+    return { error: "Não deu pra iniciar sua assinatura agora. Tenta de novo em instantes." };
+  }
 
   if (coupon) {
     try {
