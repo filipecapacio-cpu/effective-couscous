@@ -29,8 +29,11 @@ export default function TermosPage() {
           <p>
             Estes Termos de Uso regulam o acesso e o uso do aplicativo Onmode (&quot;Onmode&quot;,
             &quot;nós&quot;, &quot;nosso&quot;), disponibilizado por{" "}
-            <strong>[RAZÃO SOCIAL / NOME COMPLETO DO RESPONSÁVEL, CPF/CNPJ nº [•]]</strong>. Ao criar
-            uma conta ou usar a Onmode, você concorda com estes Termos e com a nossa{" "}
+            <strong>Filipe Pancieri e Arthur Picanço</strong>, com sede em Belém-PA{" "}
+            <span className="text-ink-faint">
+              (razão social e CNPJ serão atualizados aqui assim que a empresa for formalizada)
+            </span>
+            . Ao criar uma conta ou usar a Onmode, você concorda com estes Termos e com a nossa{" "}
             <Link href="/privacidade" className="underline underline-offset-2">
               Política de Privacidade
             </Link>
@@ -174,9 +177,9 @@ export default function TermosPage() {
         <Section title="12. Lei aplicável e foro">
           <p>
             Estes Termos são regidos pelas leis da República Federativa do Brasil. Fica eleito o
-            foro da comarca de <strong>[CIDADE/UF a definir]</strong> para dirimir quaisquer
-            controvérsias, com renúncia a qualquer outro, por mais privilegiado que seja, ressalvado
-            o foro do domicílio do consumidor, quando aplicável.
+            foro da comarca de <strong>Belém, Pará</strong> para dirimir quaisquer controvérsias,
+            com renúncia a qualquer outro, por mais privilegiado que seja, ressalvado o foro do
+            domicílio do consumidor, quando aplicável.
           </p>
         </Section>
 
