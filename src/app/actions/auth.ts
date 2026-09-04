@@ -76,10 +76,19 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     return { error: traduzErro(error.message) };
+  }
+
+  if (data.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_influencer")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    if (profile?.is_influencer) redirect("/parceiro");
   }
 
   redirect("/dashboard");

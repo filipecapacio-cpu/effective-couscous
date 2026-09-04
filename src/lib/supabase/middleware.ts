@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   if (isProtected && user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("has_chosen_plan, subscription_status, trial_ends_at, is_founder")
+      .select("has_chosen_plan, subscription_status, trial_ends_at, is_founder, is_influencer")
       .eq("id", user.id)
       .single();
 
@@ -65,7 +65,9 @@ export async function updateSession(request: NextRequest) {
 
     if (!hasAccess) {
       const url = request.nextUrl.clone();
-      url.pathname = "/assinatura";
+      // Influencer não é assinante - não faz sentido mandar ele pro
+      // seletor de planos. Manda pro próprio painel dele.
+      url.pathname = profile?.is_influencer ? "/parceiro" : "/assinatura";
       return NextResponse.redirect(url);
     }
   }
