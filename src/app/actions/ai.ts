@@ -10,6 +10,7 @@ import { WeekPlanSchema, type WeekPlan } from "@/lib/ai-plan";
 import { replaceTodayPlanWithAiPlan, replaceTodayMealsOnly } from "@/app/actions/plan";
 import { GOAL_LABEL, type Goal } from "@/lib/plan";
 import { hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
+import { checkAndLogAiUsage } from "@/lib/rate-limit";
 import {
   ACTIVITY_LABEL,
   EXPERIENCE_LABEL,
@@ -35,7 +36,8 @@ const AI_LOCKED_MESSAGE = "O assistente de IA é uma funcionalidade dos planos P
  */
 async function requireAiAccess(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string
+  userId: string,
+  kind: "chat" | "plan"
 ): Promise<{ error: string } | null> {
   const { data: profile } = await supabase
     .from("profiles")
@@ -47,7 +49,9 @@ async function requireAiAccess(
     profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
     "pro"
   );
-  return allowed ? null : { error: AI_LOCKED_MESSAGE };
+  if (!allowed) return { error: AI_LOCKED_MESSAGE };
+
+  return checkAndLogAiUsage(userId, kind, !!profile?.is_founder);
 }
 
 function parseAnamnesisForm(formData: FormData): Anamnesis | { error: string } {
@@ -252,7 +256,7 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sessão expirada. Entre novamente." };
 
-  const accessError = await requireAiAccess(supabase, user.id);
+  const accessError = await requireAiAccess(supabase, user.id, "plan");
   if (accessError) return accessError;
 
   const { error: saveError } = await supabase.from("anamneses").upsert({
@@ -317,7 +321,7 @@ export async function regeneratePlan(): Promise<AiActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sessão expirada. Entre novamente." };
 
-  const accessError = await requireAiAccess(supabase, user.id);
+  const accessError = await requireAiAccess(supabase, user.id, "plan");
   if (accessError) return accessError;
 
   const [{ data: anamnesis }, { data: profile }] = await Promise.all([
@@ -434,6 +438,9 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
   if (!hasPlanFeature(profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null, "pro")) {
     return { error: AI_LOCKED_MESSAGE };
   }
+
+  const rateLimitError = await checkAndLogAiUsage(user.id, "chat", !!profile?.is_founder);
+  if (rateLimitError) return rateLimitError;
 
   const goal = (profile?.goal as Goal | null) ?? null;
 
