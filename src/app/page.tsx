@@ -212,8 +212,8 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-col gap-3">
             <div className="text-xs font-mono text-on-ink-soft uppercase tracking-[0.1em] mb-1.5">Legal</div>
-            <a href="#" className="text-on-ink text-sm">Privacidade</a>
-            <a href="#" className="text-on-ink text-sm">Termos</a>
+            <Link href="/privacidade" className="text-on-ink text-sm">Privacidade</Link>
+            <Link href="/termos" className="text-on-ink text-sm">Termos</Link>
           </div>
         </div>
         <div className="pt-6 text-on-ink-soft text-xs">© Onmode</div>
