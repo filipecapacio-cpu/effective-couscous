@@ -73,23 +73,36 @@ export async function POST(request: NextRequest) {
 
   // Primeira cobrança CONFIRMADA (não o início do trial) é o que conta como
   // "venda" pra fins de comissão de cupom - marca só uma vez, mesmo que uma
-  // renovação futura confirme de novo.
+  // renovação futura confirme de novo. Update condicional atômico (em vez de
+  // ler e depois escrever) pra não duplicar/correr risco se o Asaas reentregar
+  // o mesmo evento duas vezes.
   if (newStatus === "active" && profileId) {
-    const { data: current } = await supabase
+    await supabase
       .from("profiles")
-      .select("first_payment_confirmed_at")
+      .update({
+        first_payment_confirmed_at: new Date().toISOString(),
+        first_payment_value: typeof payment?.value === "number" ? payment.value : null,
+        first_payment_asaas_id: typeof payment?.id === "string" ? payment.id : null,
+      })
       .eq("id", profileId)
-      .single();
+      .is("first_payment_confirmed_at", null);
+  }
 
-    if (current && !current.first_payment_confirmed_at) {
-      await supabase
-        .from("profiles")
-        .update({
-          first_payment_confirmed_at: new Date().toISOString(),
-          first_payment_value: typeof payment?.value === "number" ? payment.value : null,
-        })
-        .eq("id", profileId);
-    }
+  // Estorno/chargeback/exclusão: se a cobrança revertida for exatamente a
+  // que tinha gerado a "venda" original, desfaz a marcação - sem isso, a
+  // comissão do influencer continuava contando receita que voltou pro
+  // cliente. Não mexe se o pagamento revertido for de uma renovação
+  // posterior (a venda original continua valendo).
+  if (newStatus === "canceled" && profileId && typeof payment?.id === "string") {
+    await supabase
+      .from("profiles")
+      .update({
+        first_payment_confirmed_at: null,
+        first_payment_value: null,
+        first_payment_asaas_id: null,
+      })
+      .eq("id", profileId)
+      .eq("first_payment_asaas_id", payment.id);
   }
 
   return NextResponse.json({ ok: true });

@@ -8,6 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBRL } from "@/lib/plans";
+import { aggregateCouponStats, couponCommission } from "@/lib/coupons";
 
 /**
  * Painel de parceiro/influencer - não é gateado pelo plano nem pelo
@@ -53,18 +54,12 @@ export default async function ParceiroPage() {
         .not("first_payment_confirmed_at", "is", null)
     : { data: [] as { coupon_id: string; first_payment_value: number | null }[] };
 
-  const statsByCoupon = new Map<string, { vendas: number; receita: number }>();
-  for (const sale of sales ?? []) {
-    const prev = statsByCoupon.get(sale.coupon_id) ?? { vendas: 0, receita: 0 };
-    prev.vendas += 1;
-    prev.receita += sale.first_payment_value ?? 0;
-    statsByCoupon.set(sale.coupon_id, prev);
-  }
+  const statsByCoupon = aggregateCouponStats(sales ?? []);
 
   const totalComissao = (coupons ?? []).reduce((acc, c) => {
     const stats = statsByCoupon.get(c.id);
     if (!stats) return acc;
-    return acc + stats.receita * (c.commission_percent / 100);
+    return acc + couponCommission(stats.receita, c.commission_percent);
   }, 0);
 
   return (
@@ -106,7 +101,7 @@ export default async function ParceiroPage() {
           <div className="flex flex-col gap-4">
             {(coupons ?? []).map((c) => {
               const stats = statsByCoupon.get(c.id) ?? { vendas: 0, receita: 0 };
-              const comissao = stats.receita * (c.commission_percent / 100);
+              const comissao = couponCommission(stats.receita, c.commission_percent);
               return (
                 <div key={c.id} className="bg-ink-bg-2 rounded-lg border border-white/10 p-5 flex flex-col gap-4">
                   <div className="flex items-center justify-between">

@@ -61,12 +61,18 @@ export async function createInfluencerCoupon(formData: FormData): Promise<Create
     return { error: `Não deu pra criar a conta: ${createError?.message ?? "erro desconhecido"}` };
   }
 
+  // Se qualquer passo daqui pra frente falhar, desfaz a conta criada (a
+  // exclusão já cai em cascata pro profile) em vez de deixar um influencer
+  // pela metade (conta criada mas sem is_influencer, ou sem cupom) - assim
+  // o e-mail fica livre de novo e "tenta de novo" funciona de verdade.
   const { error: profileError } = await admin
     .from("profiles")
     .update({ name, is_influencer: true })
     .eq("id", created.user.id);
   if (profileError) {
     console.error("[createInfluencerCoupon] failed to update profile:", profileError);
+    await admin.auth.admin.deleteUser(created.user.id);
+    return { error: "Não deu pra configurar o perfil do influencer. Nada foi criado - pode tentar de novo." };
   }
 
   const { error: couponError } = await admin.from("coupons").insert({
@@ -76,8 +82,10 @@ export async function createInfluencerCoupon(formData: FormData): Promise<Create
     commission_percent: commissionPercent,
   });
   if (couponError) {
+    console.error("[createInfluencerCoupon] failed to create coupon:", couponError);
+    await admin.auth.admin.deleteUser(created.user.id);
     return {
-      error: `A conta foi criada (${email}) mas o cupom não salvou: ${couponError.message}. Pode tentar de novo só o cupom, a conta já existe.`,
+      error: `Não deu pra criar o cupom (${couponError.message}). Nada ficou pela metade - pode tentar de novo.`,
     };
   }
 

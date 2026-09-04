@@ -10,6 +10,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBRL } from "@/lib/plans";
+import { aggregateCouponStats, couponCommission } from "@/lib/coupons";
 
 /**
  * Ferramenta interna só pra founders (você e o Arthur) criarem parceiros/
@@ -51,13 +52,7 @@ export default async function AdminParceirosPage() {
         .not("first_payment_confirmed_at", "is", null)
     : { data: [] as { coupon_id: string; first_payment_value: number | null }[] };
 
-  const statsByCoupon = new Map<string, { vendas: number; receita: number }>();
-  for (const sale of sales ?? []) {
-    const prev = statsByCoupon.get(sale.coupon_id) ?? { vendas: 0, receita: 0 };
-    prev.vendas += 1;
-    prev.receita += sale.first_payment_value ?? 0;
-    statsByCoupon.set(sale.coupon_id, prev);
-  }
+  const statsByCoupon = aggregateCouponStats(sales ?? []);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-16 flex flex-col gap-10 min-h-svh">
@@ -83,7 +78,7 @@ export default async function AdminParceirosPage() {
           <div className="flex flex-col gap-3">
             {(coupons ?? []).map((c) => {
               const stats = statsByCoupon.get(c.id) ?? { vendas: 0, receita: 0 };
-              const comissao = stats.receita * (c.commission_percent / 100);
+              const comissao = couponCommission(stats.receita, c.commission_percent);
               return (
                 <div key={c.id} className="border border-line rounded-lg p-4 flex items-center justify-between gap-3">
                   <div>
