@@ -449,11 +449,19 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
   try {
     let response = await withModelFallback((model) =>
       client.messages.create(
-        { model, max_tokens: 1024, system, messages, tools: [LAUNCH_DIET_TOOL] },
+        // max_tokens mais folgado que o resto do chat: dá pra cortar a
+        // chamada da ferramenta no meio (até 8 refeições detalhadas) se
+        // ficar curto - foi exatamente isso que causou o primeiro bug daqui.
+        { model, max_tokens: 4096, system, messages, tools: [LAUNCH_DIET_TOOL] },
         { timeout: 25_000, maxRetries: 0 }
       )
     );
     messages.push({ role: "assistant", content: response.content });
+
+    if (response.stop_reason === "max_tokens") {
+      console.error("[sendChatMessage] response truncated by max_tokens before completing");
+      return { error: "A resposta ficou grande demais e cortou no meio. Tenta pedir de novo, talvez de forma mais simples." };
+    }
 
     const toolUse = response.content.find(
       (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === "lancar_plano_alimentar"
