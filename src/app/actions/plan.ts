@@ -156,6 +156,50 @@ export async function replaceTodayPlanWithAiPlan(userId: string, plan: WeekPlan)
   ]);
 }
 
+/**
+ * Substitui só as refeições de HOJE - não mexe no treino. Usado pelo assistente
+ * de IA quando o usuário pede pra lançar/atualizar a dieta direto pelo chat,
+ * sem passar pela anamnese/plano semanal inteiro.
+ */
+export async function replaceTodayMealsOnly(
+  userId: string,
+  meals: { name: string; detail: string | null; kcal: number | null }[]
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = await createClient();
+  const date = todayISO();
+
+  const { error: deleteError } = await supabase
+    .from("meals")
+    .delete()
+    .eq("user_id", userId)
+    .eq("date", date);
+  if (deleteError) {
+    console.error("[replaceTodayMealsOnly] failed to clear today's meals:", deleteError);
+    return { error: "Não deu pra substituir as refeições de hoje." };
+  }
+
+  if (meals.length === 0) return { ok: true };
+
+  const { error: insertError } = await supabase.from("meals").insert(
+    meals.map((m, i) => ({
+      user_id: userId,
+      date,
+      name: m.name,
+      detail: m.detail,
+      kcal: m.kcal,
+      position: i,
+    }))
+  );
+  if (insertError) {
+    console.error("[replaceTodayMealsOnly] failed to insert meals:", insertError);
+    return { error: "As refeições não salvaram." };
+  }
+
+  revalidatePath("/plano");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 /** Aplica o objetivo escolhido no onboarding assim que a conta é confirmada. */
 export async function completeOnboarding(userId: string, goal: Goal) {
   const supabase = await createClient();

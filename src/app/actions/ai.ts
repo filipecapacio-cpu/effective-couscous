@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { describeAnthropicError, getAnthropicClient, isAnthropicConfigured } from "@/lib/anthropic";
 import { WeekPlanSchema, type WeekPlan } from "@/lib/ai-plan";
-import { replaceTodayPlanWithAiPlan } from "@/app/actions/plan";
+import { replaceTodayPlanWithAiPlan, replaceTodayMealsOnly } from "@/app/actions/plan";
 import { GOAL_LABEL, type Goal } from "@/lib/plan";
 import { hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
 import {
@@ -352,7 +353,52 @@ const CHAT_SYSTEM_PROMPT = `Você é o assistente de treino e nutrição do Onmo
 direta, prática e curta (poucos parágrafos) - o usuário está no meio da rotina, não tem tempo
 pra textão. Use o contexto da anamnese e do plano atual quando ajudar a resposta. Nunca
 substitua avaliação médica para questões de saúde sérias - recomende buscar um profissional
-nesses casos. Responda em português do Brasil.`;
+nesses casos. Quando o usuário pedir pra você gerar, montar, lançar ou atualizar a dieta/plano
+alimentar de hoje, use a ferramenta lancar_plano_alimentar em vez de só descrever as refeições em
+texto - só assim a aba Dieta do app é atualizada de verdade. Estime a meta calórica a partir do
+perfil da anamnese (peso, altura, idade, atividade) e do objetivo, e respeite restrições
+alimentares informadas como inegociáveis. Responda em português do Brasil.`;
+
+/** Ferramenta que o chat pode acionar pra lançar a dieta de hoje de verdade (não só descrever em texto). */
+const LAUNCH_DIET_TOOL: Anthropic.Tool = {
+  name: "lancar_plano_alimentar",
+  description:
+    "Lança um plano alimentar como a dieta de HOJE do usuário no app (aba Plano > Dieta), substituindo as refeições de hoje que já existirem. NÃO mexe no treino. Use sempre que o usuário pedir pra gerar, montar, lançar ou atualizar a dieta/plano alimentar de hoje.",
+  input_schema: {
+    type: "object",
+    properties: {
+      meals: {
+        type: "array",
+        description: "As refeições do dia, na ordem em que acontecem (café da manhã primeiro).",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "Ex: 'Café da manhã', 'Almoço', 'Jantar'" },
+            detail: { type: "string", description: "O que comer, de forma objetiva e específica" },
+            kcal: { type: "integer", description: "Estimativa de calorias da refeição" },
+          },
+          required: ["name", "detail", "kcal"],
+        },
+        minItems: 1,
+        maxItems: 8,
+      },
+    },
+    required: ["meals"],
+  },
+};
+
+const LaunchDietInputSchema = z.object({
+  meals: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        detail: z.string().min(1),
+        kcal: z.number().int().min(0).max(3000),
+      })
+    )
+    .min(1)
+    .max(8),
+});
 
 export async function sendChatMessage(message: string): Promise<{ error: string } | { reply: string }> {
   const trimmed = message.trim();
@@ -397,23 +443,63 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
     { role: "user", content: trimmed },
   ];
 
+  const system = `${CHAT_SYSTEM_PROMPT}\n\n${contextNote}`;
   let reply: string;
+  let dietUpdated = false;
   try {
-    const response = await withModelFallback((model) =>
+    let response = await withModelFallback((model) =>
       client.messages.create(
-        {
-          model,
-          max_tokens: 1024,
-          system: `${CHAT_SYSTEM_PROMPT}\n\n${contextNote}`,
-          messages,
-        },
+        { model, max_tokens: 1024, system, messages, tools: [LAUNCH_DIET_TOOL] },
         { timeout: 25_000, maxRetries: 0 }
       )
     );
-    const textBlock = response.content.find(
-      (b): b is Anthropic.TextBlock => b.type === "text"
+    messages.push({ role: "assistant", content: response.content });
+
+    const toolUse = response.content.find(
+      (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === "lancar_plano_alimentar"
     );
-    reply = textBlock?.text ?? "Não consegui pensar numa resposta agora — tenta reformular?";
+
+    if (toolUse) {
+      const parsed = LaunchDietInputSchema.safeParse(toolUse.input);
+      let toolResultContent: string;
+      let isError = false;
+
+      if (!parsed.success) {
+        console.error("[sendChatMessage] invalid tool input:", parsed.error, toolUse.input);
+        toolResultContent = "Os dados enviados não são válidos - confere o formato e tenta de novo.";
+        isError = true;
+      } else {
+        const result = await replaceTodayMealsOnly(user.id, parsed.data.meals);
+        if ("error" in result) {
+          toolResultContent = result.error;
+          isError = true;
+        } else {
+          toolResultContent = "Dieta de hoje atualizada com sucesso.";
+          dietUpdated = true;
+        }
+      }
+
+      messages.push({
+        role: "user",
+        content: [
+          { type: "tool_result", tool_use_id: toolUse.id, content: toolResultContent, is_error: isError },
+        ],
+      });
+
+      // Segunda chamada só pra pegar a confirmação em texto - sem tools, não
+      // precisa (nem deve) chamar a ferramenta de novo nessa resposta.
+      response = await withModelFallback((model) =>
+        client.messages.create(
+          { model, max_tokens: 1024, system, messages },
+          { timeout: 25_000, maxRetries: 0 }
+        )
+      );
+    }
+
+    const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
+    reply =
+      textBlock?.text ??
+      (dietUpdated ? "Prontinho, atualizei sua dieta de hoje!" : "Não consegui pensar numa resposta agora — tenta reformular?");
   } catch (err) {
     console.error("[sendChatMessage] Anthropic API error:", err);
     return { error: describeAnthropicError(err) };
@@ -428,5 +514,9 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
   }
 
   revalidatePath("/assistente");
+  if (dietUpdated) {
+    revalidatePath("/plano");
+    revalidatePath("/dashboard");
+  }
   return { reply };
 }
