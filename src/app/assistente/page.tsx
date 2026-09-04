@@ -9,7 +9,7 @@ import { PlanGate } from "@/components/PlanGate";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAnthropicConfigured } from "@/lib/anthropic";
 import { createClient } from "@/lib/supabase/server";
-import { tierAtLeast, type ProfilePlanTier } from "@/lib/plans";
+import { hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
 
 export default async function AssistentePage() {
   if (!isSupabaseConfigured()) return <SetupNotice />;
@@ -21,7 +21,7 @@ export default async function AssistentePage() {
   if (!user) redirect("/entrar");
 
   const [{ data: profile }, { data: history }, { data: anamnesis }] = await Promise.all([
-    supabase.from("profiles").select("plan_tier").eq("id", user.id).single(),
+    supabase.from("profiles").select("plan_tier, is_founder").eq("id", user.id).single(),
     supabase
       .from("chat_messages")
       .select("id, role, content")
@@ -31,7 +31,10 @@ export default async function AssistentePage() {
     supabase.from("anamneses").select("user_id").eq("user_id", user.id).maybeSingle(),
   ]);
 
-  const hasAiAccess = tierAtLeast(profile?.plan_tier as ProfilePlanTier | null, "pro");
+  const hasAiAccess = hasPlanFeature(
+    profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
+    "pro"
+  );
 
   return (
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col">

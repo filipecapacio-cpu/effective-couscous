@@ -16,6 +16,20 @@ export function tierAtLeast(tier: ProfilePlanTier | null | undefined, min: Profi
   return PLAN_TIER_RANK[tier ?? "free"] >= PLAN_TIER_RANK[min];
 }
 
+/**
+ * Checagem de acesso a usar nas telas: já leva em conta os "founders" -
+ * quem criou conta antes dos planos pagos existirem e ganhou acesso a tudo
+ * pra sempre (profiles.is_founder). Usar isso em vez de tierAtLeast direto
+ * sempre que a checagem envolver um usuário de verdade.
+ */
+export function hasPlanFeature(
+  profile: { plan_tier?: ProfilePlanTier | null; is_founder?: boolean | null } | null | undefined,
+  min: ProfilePlanTier
+): boolean {
+  if (profile?.is_founder) return true;
+  return tierAtLeast(profile?.plan_tier, min);
+}
+
 export const TRIAL_DAYS = 7;
 
 export const PLAN_PRICES: Record<PlanTier, Record<BillingCycle, number>> = {

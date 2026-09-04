@@ -8,7 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/data";
 import { ensureTodayPlan } from "@/app/actions/plan";
-import { tierAtLeast, type ProfilePlanTier } from "@/lib/plans";
+import { hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
 import type { Goal } from "@/lib/plan";
 
 export default async function PlanoPage() {
@@ -20,9 +20,16 @@ export default async function PlanoPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
-  const { data: profile } = await supabase.from("profiles").select("goal, plan_tier").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("goal, plan_tier, is_founder")
+    .eq("id", user.id)
+    .single();
   await ensureTodayPlan(user.id, (profile?.goal as Goal | null) ?? null);
-  const hasShareCardAccess = tierAtLeast(profile?.plan_tier as ProfilePlanTier | null, "pro");
+  const hasShareCardAccess = hasPlanFeature(
+    profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
+    "pro"
+  );
 
   const date = todayISO();
 

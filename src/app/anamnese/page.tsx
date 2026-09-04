@@ -11,7 +11,7 @@ import { Logo } from "@/components/Logo";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { Anamnesis } from "@/lib/anamnesis";
-import { tierAtLeast, type ProfilePlanTier } from "@/lib/plans";
+import { hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
 
 export default async function AnamnesePage() {
   if (!isSupabaseConfigured()) return <SetupNotice />;
@@ -23,11 +23,14 @@ export default async function AnamnesePage() {
   if (!user) redirect("/entrar");
 
   const [{ data: profile }, { data: anamnesis }] = await Promise.all([
-    supabase.from("profiles").select("plan_tier").eq("id", user.id).single(),
+    supabase.from("profiles").select("plan_tier, is_founder").eq("id", user.id).single(),
     supabase.from("anamneses").select("*").eq("user_id", user.id).maybeSingle(),
   ]);
 
-  const hasAiAccess = tierAtLeast(profile?.plan_tier as ProfilePlanTier | null, "pro");
+  const hasAiAccess = hasPlanFeature(
+    profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
+    "pro"
+  );
 
   return (
     <div className="mx-auto w-full max-w-lg px-6 py-10 flex flex-col gap-8">

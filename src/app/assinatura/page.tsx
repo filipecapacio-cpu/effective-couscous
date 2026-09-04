@@ -21,7 +21,7 @@ export default async function AssinaturaPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("has_chosen_plan, plan_tier, subscription_status, trial_ends_at, checkout_url")
+    .select("has_chosen_plan, plan_tier, subscription_status, trial_ends_at, checkout_url, is_founder")
     .eq("id", user.id)
     .single();
 
@@ -31,8 +31,9 @@ export default async function AssinaturaPage() {
     new Date(profile.trial_ends_at) > new Date();
 
   const hasAccess =
-    profile?.has_chosen_plan &&
-    (profile.subscription_status === "active" || trialActive || profile.subscription_status === "none");
+    profile?.is_founder ||
+    (profile?.has_chosen_plan &&
+      (profile.subscription_status === "active" || trialActive || profile.subscription_status === "none"));
 
   if (hasAccess) redirect("/dashboard");
 

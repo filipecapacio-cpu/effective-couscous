@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   if (isProtected && user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("has_chosen_plan, subscription_status, trial_ends_at")
+      .select("has_chosen_plan, subscription_status, trial_ends_at, is_founder")
       .eq("id", user.id)
       .single();
 
@@ -54,11 +54,14 @@ export async function updateSession(request: NextRequest) {
       new Date(profile.trial_ends_at) > new Date();
 
     const hasAccess =
-      profile?.has_chosen_plan &&
-      (profile.subscription_status === "active" || trialActive || profile.subscription_status === "none");
+      profile?.is_founder ||
+      (profile?.has_chosen_plan &&
+        (profile.subscription_status === "active" || trialActive || profile.subscription_status === "none"));
     // "none" só conta como acesso liberado quando o usuário já escolheu
     // ativamente ficar no Free (has_chosen_plan = true); "past_due" e
-    // "canceled" caem no hard paywall.
+    // "canceled" caem no hard paywall. Founders (quem criou conta antes dos
+    // planos pagos) sempre têm acesso, mesmo sem nunca ter passado por
+    // /assinatura.
 
     if (!hasAccess) {
       const url = request.nextUrl.clone();

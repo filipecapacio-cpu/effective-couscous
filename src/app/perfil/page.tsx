@@ -13,7 +13,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAnthropicConfigured } from "@/lib/anthropic";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthHeatmap, getWeekSummary } from "@/lib/data";
-import { PLAN_LABELS, tierAtLeast, type ProfilePlanTier } from "@/lib/plans";
+import { PLAN_LABELS, hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
 
 const RANGE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long" });
 
@@ -27,7 +27,7 @@ export default async function PerfilPage() {
   if (!user) redirect("/entrar");
 
   const [{ data: profile }, summary, heatmap] = await Promise.all([
-    supabase.from("profiles").select("name, weekly_goal, plan_tier").eq("id", user.id).single(),
+    supabase.from("profiles").select("name, weekly_goal, plan_tier, is_founder").eq("id", user.id).single(),
     getWeekSummary(supabase, user.id),
     getMonthHeatmap(supabase, user.id),
   ]);
@@ -36,7 +36,10 @@ export default async function PerfilPage() {
   const initial = (profile?.name || user.email || "?").trim().charAt(0).toUpperCase();
   const hasHistory = summary.daysWithPlan > 0;
   const weeklyGoal = profile?.weekly_goal ?? 4;
-  const hasHeatmapAccess = tierAtLeast(profile?.plan_tier as ProfilePlanTier | null, "elite");
+  const hasHeatmapAccess = hasPlanFeature(
+    profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
+    "elite"
+  );
 
   const ringCircumference = 188.5;
   const ringOffset = ringCircumference * (1 - summary.consistency / 100);

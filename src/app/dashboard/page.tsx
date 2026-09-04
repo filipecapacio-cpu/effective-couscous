@@ -14,7 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStreak, getWeeklyLoad, todayISO } from "@/lib/data";
 import { completeOnboarding, ensureTodayPlan } from "@/app/actions/plan";
 import { consumePendingGoal, signOut } from "@/app/actions/auth";
-import { tierAtLeast, type ProfilePlanTier } from "@/lib/plans";
+import { hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
 import type { Goal } from "@/lib/plan";
 
 const WEEKDAY_LONG = new Intl.DateTimeFormat("pt-BR", {
@@ -34,12 +34,15 @@ export default async function DashboardPage() {
 
   // Perfil e o cookie de onboarding pendente não dependem um do outro.
   const [{ data: profile }, pendingGoal] = await Promise.all([
-    supabase.from("profiles").select("name, goal, plan_tier").eq("id", user.id).single(),
+    supabase.from("profiles").select("name, goal, plan_tier, is_founder").eq("id", user.id).single(),
     consumePendingGoal(),
   ]);
 
   const goal = (profile?.goal as Goal | null) ?? null;
-  const hasAiAccess = tierAtLeast(profile?.plan_tier as ProfilePlanTier | null, "pro");
+  const hasAiAccess = hasPlanFeature(
+    profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
+    "pro"
+  );
   if (pendingGoal && !goal) {
     await completeOnboarding(user.id, pendingGoal);
   } else {
