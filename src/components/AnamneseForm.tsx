@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { saveAnamnesisAndGeneratePlan, type AiActionResult } from "@/app/actions/ai";
 import {
   ACTIVITY_LABEL,
@@ -134,6 +135,23 @@ export default function AnamneseForm({ initial }: { initial: Anamnesis | null })
           </label>
         </div>
       </section>
+
+      <label className="flex items-start gap-2.5 text-sm text-ink-soft">
+        <input
+          name="health_consent"
+          type="checkbox"
+          required
+          className="mt-0.5 w-4 h-4 flex-shrink-0 accent-ink"
+        />
+        <span>
+          Autorizo o uso desses dados de saúde exclusivamente pra gerar meu treino e dieta
+          personalizados, conforme a{" "}
+          <Link href="/privacidade" target="_blank" className="font-semibold text-ink underline underline-offset-2">
+            Política de Privacidade
+          </Link>
+          .
+        </span>
+      </label>
 
       {state && "error" in state && (
         <div className="text-sm text-accent font-medium">{state.error}</div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import type { AuthResult } from "@/app/actions/auth";
 
 type Props = {
@@ -63,6 +64,28 @@ export default function AuthForm({ action, mode, goal }: Props) {
           className="h-12 rounded border border-line bg-paper px-4 text-[15px] outline-none focus:border-ink"
         />
       </label>
+
+      {mode === "cadastro" && (
+        <label className="flex items-start gap-2.5 text-sm text-ink-soft">
+          <input
+            name="terms"
+            type="checkbox"
+            required
+            className="mt-0.5 w-4 h-4 flex-shrink-0 accent-ink"
+          />
+          <span>
+            Li e aceito os{" "}
+            <Link href="/termos" target="_blank" className="font-semibold text-ink underline underline-offset-2">
+              Termos de Uso
+            </Link>{" "}
+            e a{" "}
+            <Link href="/privacidade" target="_blank" className="font-semibold text-ink underline underline-offset-2">
+              Política de Privacidade
+            </Link>
+            .
+          </span>
+        </label>
+      )}
 
       {state && "error" in state && (
         <div className="text-sm text-accent font-medium">{state.error}</div>

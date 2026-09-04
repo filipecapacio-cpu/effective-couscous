@@ -44,8 +44,12 @@ export default async function AnamnesePage() {
         </div>
         <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-3xl">Sua anamnese</h1>
         <p className="text-ink-soft text-[15px]">
-          Quanto mais completo, mais preciso fica o treino e a dieta gerados pra você. Isso fica
-          só entre você e o Onmode.
+          Quanto mais completo, mais preciso fica o treino e a dieta gerados pra você. Usamos
+          esses dados só pra montar seu plano — veja como em{" "}
+          <Link href="/privacidade" target="_blank" className="underline underline-offset-2">
+            nossa Política de Privacidade
+          </Link>
+          .
         </p>
       </div>
 

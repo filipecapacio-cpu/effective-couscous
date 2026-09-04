@@ -242,6 +242,10 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
   const parsed = parseAnamnesisForm(formData);
   if ("error" in parsed) return parsed;
 
+  if (formData.get("health_consent") !== "on") {
+    return { error: "Você precisa autorizar o uso desses dados de saúde pra gerar seu plano." };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -251,9 +255,12 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
   const accessError = await requireAiAccess(supabase, user.id);
   if (accessError) return accessError;
 
-  const { error: saveError } = await supabase
-    .from("anamneses")
-    .upsert({ user_id: user.id, ...parsed, updated_at: new Date().toISOString() });
+  const { error: saveError } = await supabase.from("anamneses").upsert({
+    user_id: user.id,
+    ...parsed,
+    health_data_consent_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
   if (saveError) {
     console.error("[saveAnamnesisAndGeneratePlan] failed to save anamnesis:", saveError);
     return { error: "Não deu pra salvar a anamnese agora. Tenta de novo em instantes." };

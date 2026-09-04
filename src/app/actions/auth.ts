@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Goal } from "@/lib/plan";
 
 const PENDING_GOAL_COOKIE = "pulso_pending_goal";
@@ -14,10 +15,14 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const acceptedTerms = formData.get("terms") === "on";
   const goal = formData.get("goal") ? String(formData.get("goal")) : null;
 
   if (!name || !email || !password) {
     return { error: "Preencha nome, e-mail e senha." };
+  }
+  if (!acceptedTerms) {
+    return { error: "Você precisa aceitar os Termos de Uso e a Política de Privacidade pra criar sua conta." };
   }
 
   const supabase = await createClient();
@@ -29,6 +34,20 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
 
   if (error) {
     return { error: traduzErro(error.message) };
+  }
+
+  if (data.user) {
+    // Client admin porque, quando a confirmação de e-mail está ativa, ainda
+    // não existe sessão nesse momento - a policy "profiles: update own"
+    // (auth.uid() = id) bloquearia a escrita do client normal.
+    const admin = createAdminClient();
+    const { error: consentError } = await admin
+      .from("profiles")
+      .update({ terms_accepted_at: new Date().toISOString() })
+      .eq("id", data.user.id);
+    if (consentError) {
+      console.error("[signUp] failed to record terms acceptance:", consentError);
+    }
   }
 
   if (goal) {
