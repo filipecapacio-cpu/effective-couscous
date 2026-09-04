@@ -30,16 +30,24 @@ export default async function AssinaturaPage() {
     !!profile.trial_ends_at &&
     new Date(profile.trial_ends_at) > new Date();
 
-  const hasAccess =
+  // Só manda de volta pro dashboard quem já tem acesso pago (ou é founder) -
+  // "none" (Free) não conta aqui de propósito: um usuário Free precisa
+  // conseguir voltar nessa tela pra fazer upgrade. O paywall de "ainda não
+  // escolheu nada" continua sendo aplicado pelo middleware, não por aqui.
+  const hasPaidAccess =
     profile?.is_founder ||
-    (profile?.has_chosen_plan &&
-      (profile.subscription_status === "active" || trialActive || profile.subscription_status === "none"));
+    (profile?.has_chosen_plan && (profile.subscription_status === "active" || trialActive));
 
-  if (hasAccess) redirect("/dashboard");
+  if (hasPaidAccess) redirect("/dashboard");
 
-  // Trial vencido ou pagamento em atraso: já existe assinatura, só falta pagar.
+  // Trial vencido ou pagamento em atraso: já existe assinatura, só falta
+  // pagar. "canceled" fica de fora de propósito - quem cancelou vê o
+  // seletor de planos de novo (pra reassinar ou voltar pro Free), não uma
+  // cobrança antiga que já não existe mais no Asaas.
   const pendingPayment =
-    profile?.has_chosen_plan && profile.checkout_url && profile.subscription_status !== "none";
+    profile?.has_chosen_plan &&
+    profile.checkout_url &&
+    (profile.subscription_status === "trialing" || profile.subscription_status === "past_due");
 
   return (
     <div className="mx-auto w-full max-w-md px-6 py-16 flex flex-col gap-8 min-h-svh">
