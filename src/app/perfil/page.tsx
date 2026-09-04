@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
 import ShareSummaryButton from "@/components/ShareSummaryButton";
 import ProfileEditForm from "@/components/ProfileEditForm";
+import CancelSubscriptionButton from "@/components/CancelSubscriptionButton";
 import Heatmap from "@/components/Heatmap";
 import { Logo } from "@/components/Logo";
 import { SparkleIcon } from "@/components/icons";
@@ -14,6 +15,12 @@ import { isAnthropicConfigured } from "@/lib/anthropic";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthHeatmap, getWeekSummary } from "@/lib/data";
 import { PLAN_LABELS, hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
+
+const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+  trialing: "Em teste grátis",
+  active: "Ativa",
+  past_due: "Pagamento pendente",
+};
 
 const RANGE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long" });
 
@@ -27,7 +34,11 @@ export default async function PerfilPage() {
   if (!user) redirect("/entrar");
 
   const [{ data: profile }, summary, heatmap] = await Promise.all([
-    supabase.from("profiles").select("name, weekly_goal, plan_tier, is_founder").eq("id", user.id).single(),
+    supabase
+      .from("profiles")
+      .select("name, weekly_goal, plan_tier, is_founder, subscription_status, asaas_subscription_id")
+      .eq("id", user.id)
+      .single(),
     getWeekSummary(supabase, user.id),
     getMonthHeatmap(supabase, user.id),
   ]);
@@ -40,6 +51,13 @@ export default async function PerfilPage() {
     profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
     "elite"
   );
+  const planTier = (profile?.plan_tier ?? "free") as ProfilePlanTier;
+  const canCancelSubscription =
+    !profile?.is_founder &&
+    !!profile?.asaas_subscription_id &&
+    (profile?.subscription_status === "trialing" ||
+      profile?.subscription_status === "active" ||
+      profile?.subscription_status === "past_due");
 
   const ringCircumference = 188.5;
   const ringOffset = ringCircumference * (1 - summary.consistency / 100);
@@ -157,6 +175,30 @@ export default async function PerfilPage() {
                 </div>
               </div>
             </Link>
+          </div>
+        )}
+
+        {planTier !== "free" && !profile?.is_founder && (
+          <div className="px-5 pt-6">
+            <div className="text-[13px] font-mono font-semibold text-on-ink-soft uppercase tracking-[0.06em] mb-3">
+              Assinatura
+            </div>
+            <div className="p-4 rounded-lg bg-white/5 border border-white/10 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="text-[14px] font-semibold">Plano {PLAN_LABELS[planTier]}</div>
+                {profile?.subscription_status && SUBSCRIPTION_STATUS_LABELS[profile.subscription_status] && (
+                  <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-on-ink-faint">
+                    {SUBSCRIPTION_STATUS_LABELS[profile.subscription_status]}
+                  </span>
+                )}
+              </div>
+              {profile?.subscription_status === "past_due" && (
+                <Link href="/assinatura" className="text-[13px] text-accent underline underline-offset-2">
+                  Regularizar pagamento
+                </Link>
+              )}
+              {canCancelSubscription && <CancelSubscriptionButton />}
+            </div>
           </div>
         )}
 

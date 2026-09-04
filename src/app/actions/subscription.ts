@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createAsaasCustomer, createAsaasSubscription } from "@/lib/asaas";
+import { createAsaasCustomer, createAsaasSubscription, cancelAsaasSubscription } from "@/lib/asaas";
 import { TRIAL_DAYS, type PlanTier, type BillingCycle } from "@/lib/plans";
 
 /**
@@ -90,4 +90,63 @@ export async function stayOnFree() {
 /** Recarrega a página de assinatura pra checar se o webhook já confirmou o pagamento. */
 export async function refreshSubscriptionStatus() {
   revalidatePath("/assinatura");
+}
+
+export type CancelSubscriptionResult = { error: string } | { ok: true };
+
+/**
+ * Cancela a assinatura paga do usuário: cancela no Asaas (não gera mais
+ * cobranças) e já derruba o acesso pago na hora — mesmo comportamento que
+ * o webhook aplica pra reembolso/estorno, então fica consistente com o
+ * resto do sistema. Não existe "acesso até o fim do período pago"; o
+ * texto de confirmação na tela deixa isso claro antes do usuário confirmar.
+ */
+export async function cancelSubscription(): Promise<CancelSubscriptionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/entrar");
+
+  const admin = createAdminClient();
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("asaas_subscription_id, subscription_status")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError) {
+    console.error("[cancelSubscription] failed to read profile:", profileError);
+    return { error: "Não deu pra cancelar agora. Tenta de novo em instantes." };
+  }
+
+  if (profile.subscription_status === "canceled") {
+    return { ok: true };
+  }
+
+  if (!profile.asaas_subscription_id) {
+    return { error: "Você não tem uma assinatura paga pra cancelar." };
+  }
+
+  try {
+    await cancelAsaasSubscription(profile.asaas_subscription_id);
+  } catch (err) {
+    console.error("[cancelSubscription] Asaas cancel failed:", err);
+    return { error: "Não deu pra cancelar agora. Tenta de novo em instantes ou fala com o suporte." };
+  }
+
+  const { error: updateError } = await admin
+    .from("profiles")
+    .update({ subscription_status: "canceled", subscription_updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  if (updateError) {
+    console.error("[cancelSubscription] failed to update profile after Asaas cancel:", updateError);
+    return { error: "Cancelamos no Asaas, mas houve um erro ao atualizar seu acesso. Fala com o suporte." };
+  }
+
+  revalidatePath("/perfil");
+  revalidatePath("/assinatura");
+  revalidatePath("/dashboard");
+  return { ok: true };
 }
