@@ -29,8 +29,7 @@ export default function TermosPage() {
           <p>
             Estes Termos de Uso regulam o acesso e o uso do aplicativo Onmode (&quot;Onmode&quot;,
             &quot;nós&quot;, &quot;nosso&quot;), disponibilizado por{" "}
-            <strong>Fluxo Criativo</strong>, operada por Filipe Pancieri e Arthur Picanço, com
-            sede em Belém-PA{" "}
+            <strong>Fluxo Criativo</strong>, com sede em Belém-PA{" "}
             <span className="text-ink-faint">
               (razão social e CNPJ serão atualizados aqui assim que a empresa for formalizada)
             </span>
