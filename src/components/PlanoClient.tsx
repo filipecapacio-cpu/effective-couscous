@@ -14,6 +14,7 @@ import {
   updateMeal,
 } from "@/app/actions/plan";
 import { saveWorkoutLog } from "@/app/actions/workoutLog";
+import { regeneratePlan, type AiActionResult } from "@/app/actions/ai";
 import {
   INTENSITY_LABELS,
   WORKOUT_MODALITIES,
@@ -81,6 +82,7 @@ export default function PlanoClient({
             <div className="text-[11px] font-mono uppercase tracking-[0.06em] text-ink-faint mt-1.5">
               Gerado em {AI_PLAN_DATE_FMT.format(new Date(aiPlanGeneratedAt))}
             </div>
+            <RegeneratePlanButton />
           </div>
         </div>
       )}
@@ -268,6 +270,36 @@ export default function PlanoClient({
         )}
       </main>
     </>
+  );
+}
+
+/** Gera um novo plano com IA a partir da anamnese já salva, sem passar pelo formulário de novo. */
+function RegeneratePlanButton() {
+  const [pending, startTransition] = useTransition();
+  const [result, setResult] = useState<AiActionResult>(null);
+
+  function handleClick() {
+    setResult(null);
+    startTransition(async () => {
+      setResult(await regeneratePlan());
+    });
+  }
+
+  return (
+    <div className="mt-2.5 flex flex-col gap-1">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={pending}
+        className="self-start text-[12.5px] font-semibold text-ink underline underline-offset-2 disabled:opacity-50"
+      >
+        {pending ? "Gerando novo plano…" : "Gerar novo plano"}
+      </button>
+      <p className="text-[11px] text-ink-faint">Substitui o treino e a dieta de hoje pelos novos.</p>
+      {result && "error" in result && (
+        <p className="text-[12px] text-accent font-medium">{result.error}</p>
+      )}
+    </div>
   );
 }
 

@@ -8,6 +8,7 @@ import { describeAnthropicError, getAnthropicClient, isAnthropicConfigured } fro
 import { WeekPlanSchema, type WeekPlan } from "@/lib/ai-plan";
 import { replaceTodayPlanWithAiPlan } from "@/app/actions/plan";
 import { GOAL_LABEL, type Goal } from "@/lib/plan";
+import { hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
 import {
   ACTIVITY_LABEL,
   EXPERIENCE_LABEL,
@@ -21,6 +22,32 @@ import {
 } from "@/lib/anamnesis";
 
 export type AiActionResult = { error: string } | { ok: true } | null;
+
+const AI_LOCKED_MESSAGE = "O assistente de IA é uma funcionalidade dos planos Pro e Elite.";
+
+/**
+ * O assistente de IA (anamnese, regerar plano, chat) é funcionalidade paga.
+ * A tela já esconde os botões/formulários pra quem não tem acesso, mas isso
+ * sozinho não impede a Server Action de ser chamada direto - então cada
+ * ação de IA confere de novo aqui, no servidor, antes de gastar uma
+ * chamada de verdade pra API da Anthropic.
+ */
+async function requireAiAccess(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<{ error: string } | null> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan_tier, is_founder")
+    .eq("id", userId)
+    .single();
+
+  const allowed = hasPlanFeature(
+    profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
+    "pro"
+  );
+  return allowed ? null : { error: AI_LOCKED_MESSAGE };
+}
 
 function parseAnamnesisForm(formData: FormData): Anamnesis | { error: string } {
   const age = Number(formData.get("age"));
@@ -220,6 +247,9 @@ export async function saveAnamnesisAndGeneratePlan(formData: FormData): Promise<
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sessão expirada. Entre novamente." };
 
+  const accessError = await requireAiAccess(supabase, user.id);
+  if (accessError) return accessError;
+
   const { error: saveError } = await supabase
     .from("anamneses")
     .upsert({ user_id: user.id, ...parsed, updated_at: new Date().toISOString() });
@@ -279,6 +309,9 @@ export async function regeneratePlan(): Promise<AiActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sessão expirada. Entre novamente." };
 
+  const accessError = await requireAiAccess(supabase, user.id);
+  if (accessError) return accessError;
+
   const [{ data: anamnesis }, { data: profile }] = await Promise.all([
     supabase.from("anamneses").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("profiles").select("goal").eq("id", user.id).maybeSingle(),
@@ -336,7 +369,7 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
 
   const [{ data: anamnesis }, { data: profile }, { data: history }] = await Promise.all([
     supabase.from("anamneses").select("*").eq("user_id", user.id).maybeSingle(),
-    supabase.from("profiles").select("goal").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("goal, plan_tier, is_founder").eq("id", user.id).maybeSingle(),
     supabase
       .from("chat_messages")
       .select("role, content")
@@ -344,6 +377,11 @@ export async function sendChatMessage(message: string): Promise<{ error: string 
       .order("created_at", { ascending: true })
       .limit(20),
   ]);
+
+  if (!hasPlanFeature(profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null, "pro")) {
+    return { error: AI_LOCKED_MESSAGE };
+  }
+
   const goal = (profile?.goal as Goal | null) ?? null;
 
   const contextNote = anamnesis
