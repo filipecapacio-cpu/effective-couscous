@@ -30,11 +30,12 @@ export default function PrivacidadePage() {
             Esta Política de Privacidade explica como a Onmode coleta, usa, compartilha e protege
             seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (Lei nº
             13.709/2018, &quot;LGPD&quot;).{" "}
-            <strong>Filipe Pancieri e Arthur Picanço</strong>, com sede em Belém-PA{" "}
+            <strong>Fluxo Criativo</strong>, operada por Filipe Pancieri e Arthur Picanço, com
+            sede em Belém-PA{" "}
             <span className="text-ink-faint">
               (razão social e CNPJ serão atualizados aqui assim que a empresa for formalizada)
             </span>
-            , são os controladores dos dados pessoais tratados através do aplicativo Onmode.
+            , é a controladora dos dados pessoais tratados através do aplicativo Onmode.
           </p>
         </Section>
 
