@@ -61,6 +61,11 @@ export function planPrice(tier: PlanTier, cycle: BillingCycle): number {
   return PLAN_PRICES[tier][cycle];
 }
 
+/** Aplica um desconto percentual a um preço, arredondado pra 2 casas (centavos). */
+export function applyDiscount(price: number, discountPercent: number): number {
+  return Math.round(price * (1 - discountPercent / 100) * 100) / 100;
+}
+
 export function formatBRL(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }

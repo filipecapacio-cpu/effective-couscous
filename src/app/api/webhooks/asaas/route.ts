@@ -39,24 +39,56 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient();
 
+  const baseUpdate: Record<string, unknown> = {
+    subscription_status: newStatus,
+    subscription_updated_at: new Date().toISOString(),
+  };
+
   const { data: updated, error } = await supabase
     .from("profiles")
-    .update({ subscription_status: newStatus, subscription_updated_at: new Date().toISOString() })
+    .update(baseUpdate)
     .eq("asaas_subscription_id", subscriptionId)
-    .select("id");
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if ((!updated || updated.length === 0) && externalReference) {
-    const { error: fallbackError } = await supabase
+  let profileId = updated?.id ?? null;
+
+  if (!profileId && externalReference) {
+    const { data: fallbackUpdated, error: fallbackError } = await supabase
       .from("profiles")
-      .update({ subscription_status: newStatus, subscription_updated_at: new Date().toISOString() })
-      .eq("id", externalReference);
+      .update(baseUpdate)
+      .eq("id", externalReference)
+      .select("id")
+      .maybeSingle();
 
     if (fallbackError) {
       return NextResponse.json({ error: fallbackError.message }, { status: 500 });
+    }
+    profileId = fallbackUpdated?.id ?? null;
+  }
+
+  // Primeira cobrança CONFIRMADA (não o início do trial) é o que conta como
+  // "venda" pra fins de comissão de cupom - marca só uma vez, mesmo que uma
+  // renovação futura confirme de novo.
+  if (newStatus === "active" && profileId) {
+    const { data: current } = await supabase
+      .from("profiles")
+      .select("first_payment_confirmed_at")
+      .eq("id", profileId)
+      .single();
+
+    if (current && !current.first_payment_confirmed_at) {
+      await supabase
+        .from("profiles")
+        .update({
+          first_payment_confirmed_at: new Date().toISOString(),
+          first_payment_value: typeof payment?.value === "number" ? payment.value : null,
+        })
+        .eq("id", profileId);
     }
   }
 

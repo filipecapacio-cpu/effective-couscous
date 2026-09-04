@@ -66,6 +66,7 @@ export type AsaasSubscription = {
 };
 
 export type AsaasFirstPayment = {
+  id: string;
   invoiceUrl: string;
 };
 
@@ -81,7 +82,7 @@ export async function createAsaasSubscription(params: {
   tier: PlanTier;
   cycle: BillingCycle;
   externalReference: string;
-}): Promise<{ subscription: AsaasSubscription; invoiceUrl: string }> {
+}): Promise<{ subscription: AsaasSubscription; invoiceUrl: string; firstPaymentId: string }> {
   const value = planPrice(params.tier, params.cycle);
   const nextDueDate = new Date();
   nextDueDate.setDate(nextDueDate.getDate() + TRIAL_DAYS);
@@ -101,17 +102,31 @@ export async function createAsaasSubscription(params: {
     }),
   });
 
-  // Busca a primeira cobrança gerada pra pegar o link de checkout (invoiceUrl).
+  // Busca a primeira cobrança gerada pra pegar o link de checkout (invoiceUrl)
+  // e o id dela (usado depois pra aplicar desconto de cupom, se tiver).
   const payments = await asaasFetch<{ data: AsaasFirstPayment[] }>(
     `/payments?subscription=${subscription.id}&limit=1`
   );
-  const invoiceUrl = payments.data[0]?.invoiceUrl;
-  if (!invoiceUrl) throw new Error("Asaas não retornou o link de checkout da assinatura.");
+  const firstPayment = payments.data[0];
+  if (!firstPayment) throw new Error("Asaas não retornou o link de checkout da assinatura.");
 
-  return { subscription, invoiceUrl };
+  return { subscription, invoiceUrl: firstPayment.invoiceUrl, firstPaymentId: firstPayment.id };
 }
 
 /** Cancela a assinatura no Asaas (usado se o usuário trocar de plano ou cancelar). */
 export async function cancelAsaasSubscription(subscriptionId: string): Promise<void> {
   await asaasFetch(`/subscriptions/${subscriptionId}`, { method: "DELETE" });
+}
+
+/**
+ * Muda o valor de UMA cobrança específica (não da assinatura toda) - é assim
+ * que aplicamos desconto de cupom só na primeira cobrança: a assinatura
+ * continua com o valor cheio pras próximas renovações, só essa cobrança
+ * pontual sai mais barata. Só funciona em cobrança ainda não paga.
+ */
+export async function updateAsaasPaymentValue(paymentId: string, value: number): Promise<void> {
+  await asaasFetch(`/payments/${paymentId}`, {
+    method: "PUT",
+    body: JSON.stringify({ value }),
+  });
 }

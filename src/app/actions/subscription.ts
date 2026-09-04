@@ -4,8 +4,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createAsaasCustomer, createAsaasSubscription, cancelAsaasSubscription } from "@/lib/asaas";
-import { TRIAL_DAYS, type PlanTier, type BillingCycle } from "@/lib/plans";
+import {
+  createAsaasCustomer,
+  createAsaasSubscription,
+  cancelAsaasSubscription,
+  updateAsaasPaymentValue,
+} from "@/lib/asaas";
+import { TRIAL_DAYS, applyDiscount, planPrice, type PlanTier, type BillingCycle } from "@/lib/plans";
 
 /**
  * Inicia o trial de 7 dias no plano escolhido: cria cliente + assinatura
@@ -15,6 +20,7 @@ import { TRIAL_DAYS, type PlanTier, type BillingCycle } from "@/lib/plans";
 export async function startPlan(formData: FormData) {
   const tier = String(formData.get("tier")) as PlanTier;
   const cycle = String(formData.get("cycle")) as BillingCycle;
+  const couponCode = String(formData.get("coupon") ?? "").trim().toUpperCase();
 
   if (tier !== "pro" && tier !== "elite") throw new Error("Plano inválido.");
   if (cycle !== "monthly" && cycle !== "annual") throw new Error("Ciclo inválido.");
@@ -31,22 +37,51 @@ export async function startPlan(formData: FormData) {
     .eq("id", user.id)
     .single();
 
+  const admin = createAdminClient();
+
+  // Cupom de parceiro/influencer: dá desconto só na primeira cobrança (não
+  // mexe no valor recorrente da assinatura). Checa aqui com a service role
+  // key porque não existe policy pública de leitura em coupons - código
+  // errado ou inativo simplesmente não aplica desconto nenhum, sem travar
+  // o checkout por causa de um cupom digitado errado.
+  let coupon: { id: string; discount_percent: number } | null = null;
+  if (couponCode) {
+    const { data } = await admin
+      .from("coupons")
+      .select("id, discount_percent")
+      .eq("code", couponCode)
+      .eq("active", true)
+      .maybeSingle();
+    coupon = data;
+  }
+
   const customer = await createAsaasCustomer({
     name: profile?.name || user.email || "Usuário Onmode",
     email: user.email ?? "",
     externalReference: user.id,
   });
-  const { subscription, invoiceUrl } = await createAsaasSubscription({
+  const { subscription, invoiceUrl, firstPaymentId } = await createAsaasSubscription({
     customerId: customer.id,
     tier,
     cycle,
     externalReference: user.id,
   });
 
+  if (coupon) {
+    try {
+      const discountedValue = applyDiscount(planPrice(tier, cycle), coupon.discount_percent);
+      await updateAsaasPaymentValue(firstPaymentId, discountedValue);
+    } catch (err) {
+      // A assinatura já foi criada com sucesso - não vale travar o usuário
+      // por causa do desconto não aplicar. Ele só paga o valor cheio.
+      console.error("[startPlan] failed to apply coupon discount to first payment:", err);
+      coupon = null;
+    }
+  }
+
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
 
-  const admin = createAdminClient();
   await admin
     .from("profiles")
     .update({
@@ -59,6 +94,8 @@ export async function startPlan(formData: FormData) {
       checkout_url: invoiceUrl,
       has_chosen_plan: true,
       subscription_updated_at: new Date().toISOString(),
+      coupon_id: coupon?.id ?? null,
+      coupon_discount_percent: coupon?.discount_percent ?? null,
     })
     .eq("id", user.id);
 
