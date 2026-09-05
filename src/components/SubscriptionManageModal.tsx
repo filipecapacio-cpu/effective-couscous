@@ -23,12 +23,14 @@ const PLAN_COMBOS: { tier: PlanTier; cycle: BillingCycle }[] = [
 ];
 
 export default function SubscriptionManageModal({
+  isFounder,
   planTier,
   billingCycle,
   subscriptionStatus,
   canManage,
   canCancel,
 }: {
+  isFounder: boolean;
   planTier: PlanTier | "free";
   billingCycle: BillingCycle | null;
   subscriptionStatus: string;
@@ -77,20 +79,25 @@ export default function SubscriptionManageModal({
 
             <div className="flex items-center justify-between p-3.5 rounded-lg bg-white/5">
               <div className="text-[14px] font-semibold text-on-ink">
-                {planTier === "free" ? "Plano Free" : `Plano ${PLAN_LABELS[planTier]}`}
+                {isFounder ? "Founder" : planTier === "free" ? "Plano Free" : `Plano ${PLAN_LABELS[planTier]}`}
               </div>
               <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-on-ink-faint">
-                {STATUS_LABELS[subscriptionStatus] ?? subscriptionStatus}
+                {isFounder ? "Acesso vitalício" : (STATUS_LABELS[subscriptionStatus] ?? subscriptionStatus)}
               </span>
             </div>
 
-            {subscriptionStatus === "past_due" && (
+            {isFounder ? (
+              <p className="text-[13px] text-on-ink-soft leading-relaxed">
+                Sua conta foi criada antes dos planos pagos existirem, então tem acesso completo ao
+                Onmode pra sempre — sem cobrança, sem assinatura pra gerenciar ou cancelar.
+              </p>
+            ) : subscriptionStatus === "past_due" ? (
               <Link href="/assinatura" className="text-[13px] text-accent underline underline-offset-2">
                 Regularizar pagamento
               </Link>
-            )}
+            ) : null}
 
-            {canManage ? (
+            {isFounder ? null : canManage ? (
               <>
                 <div className="flex flex-col gap-2">
                   <span className="text-[12px] font-mono uppercase tracking-[0.06em] text-on-ink-soft">

@@ -76,17 +76,14 @@ export default async function PerfilPage() {
       <div className="absolute -top-24 -right-20 w-72 h-72 rounded-full bg-accent opacity-20 blur-[2px] pointer-events-none" />
 
       <header className="px-5 pt-5 flex items-center justify-between relative">
-        {profile?.is_founder ? (
-          <div className="w-9" />
-        ) : (
-          <SubscriptionManageModal
-            planTier={planTier}
-            billingCycle={(profile?.billing_cycle as BillingCycle | null) ?? null}
-            subscriptionStatus={profile?.subscription_status ?? "none"}
-            canManage={canCancelSubscription}
-            canCancel={canCancelSubscription}
-          />
-        )}
+        <SubscriptionManageModal
+          isFounder={!!profile?.is_founder}
+          planTier={planTier}
+          billingCycle={(profile?.billing_cycle as BillingCycle | null) ?? null}
+          subscriptionStatus={profile?.subscription_status ?? "none"}
+          canManage={canCancelSubscription}
+          canCancel={canCancelSubscription}
+        />
         <div className="text-[13px] font-mono text-on-ink-soft uppercase tracking-[0.08em]">
           Resumo da semana
         </div>
