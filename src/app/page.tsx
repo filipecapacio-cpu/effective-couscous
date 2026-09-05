@@ -4,6 +4,7 @@ import ContactIcons from "@/components/ContactIcons";
 import {
   DumbbellIcon,
   LeafIcon,
+  LogInIcon,
   PeopleIcon,
   PulseIcon,
   QuoteIcon,
@@ -58,6 +59,13 @@ export default function LandingPage() {
           <a href="#prova">Comunidade</a>
         </nav>
         <div className="flex items-center gap-3 md:gap-4">
+          <Link
+            href="/entrar"
+            aria-label="Entrar"
+            className="w-10 h-10 rounded-full bg-card flex items-center justify-center sm:hidden"
+          >
+            <LogInIcon size={18} />
+          </Link>
           <Link href="/entrar" className="text-[15px] font-semibold hidden sm:block">
             Entrar
           </Link>

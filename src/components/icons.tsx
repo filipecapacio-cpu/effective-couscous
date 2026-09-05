@@ -156,6 +156,16 @@ export function LogOutIcon({ size = 24, className, strokeWidth = 1.6 }: IconProp
   );
 }
 
+export function LogInIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M15 21h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4" />
+      <path d="M8 17l-5-5 5-5" />
+      <path d="M3 12h12" />
+    </svg>
+  );
+}
+
 export function TrashIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
