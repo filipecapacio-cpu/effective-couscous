@@ -9,6 +9,7 @@ import {
   createAsaasSubscription,
   cancelAsaasSubscription,
   updateAsaasPaymentValue,
+  updateAsaasSubscriptionValue,
 } from "@/lib/asaas";
 import { TRIAL_DAYS, applyDiscount, planPrice, type PlanTier, type BillingCycle } from "@/lib/plans";
 
@@ -200,5 +201,82 @@ export async function cancelSubscription(): Promise<CancelSubscriptionResult> {
   revalidatePath("/perfil");
   revalidatePath("/assinatura");
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export type ChangePlanResult = { error: string } | { ok: true };
+
+/**
+ * Troca de plano (Pro <-> Elite) e/ou de ciclo (mensal <-> anual) de quem
+ * já tem assinatura em trial/ativa/em atraso - atualiza a MESMA assinatura
+ * no Asaas em vez de cancelar e criar outra, então não reinicia o trial
+ * nem gera uma segunda cobrança. Sem proporcionalidade: a mudança vale o
+ * valor cheio do novo plano já na próxima cobrança.
+ */
+export async function changePlan(formData: FormData): Promise<ChangePlanResult> {
+  const tier = String(formData.get("tier")) as PlanTier;
+  const cycle = String(formData.get("cycle")) as BillingCycle;
+
+  if (tier !== "pro" && tier !== "elite") return { error: "Plano inválido." };
+  if (cycle !== "monthly" && cycle !== "annual") return { error: "Ciclo inválido." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/entrar");
+
+  const admin = createAdminClient();
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("asaas_subscription_id, subscription_status, plan_tier, billing_cycle")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    console.error("[changePlan] failed to read profile:", profileError);
+    return { error: "Não deu pra trocar de plano agora. Tenta de novo em instantes." };
+  }
+
+  const canChange =
+    !!profile.asaas_subscription_id &&
+    (profile.subscription_status === "trialing" ||
+      profile.subscription_status === "active" ||
+      profile.subscription_status === "past_due");
+  if (!canChange) {
+    return { error: "Você não tem uma assinatura ativa pra trocar. Escolha um plano em /assinatura." };
+  }
+
+  if (profile.plan_tier === tier && profile.billing_cycle === cycle) {
+    return { error: "Você já está nesse plano." };
+  }
+
+  try {
+    await updateAsaasSubscriptionValue(profile.asaas_subscription_id!, {
+      value: planPrice(tier, cycle),
+      cycle,
+    });
+  } catch (err) {
+    console.error("[changePlan] Asaas update failed:", err);
+    return { error: "Não deu pra trocar de plano agora. Tenta de novo em instantes." };
+  }
+
+  const { error: updateError } = await admin
+    .from("profiles")
+    .update({
+      plan_tier: tier,
+      billing_cycle: cycle,
+      subscription_updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id);
+
+  if (updateError) {
+    console.error("[changePlan] failed to update profile after Asaas change:", updateError);
+    return { error: "Trocamos no Asaas, mas houve um erro ao atualizar seu plano aqui. Fala com o suporte." };
+  }
+
+  revalidatePath("/perfil");
+  revalidatePath("/dashboard");
+  revalidatePath("/plano");
   return { ok: true };
 }

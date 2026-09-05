@@ -130,3 +130,27 @@ export async function updateAsaasPaymentValue(paymentId: string, value: number):
     body: JSON.stringify({ value }),
   });
 }
+
+/**
+ * Troca o valor/ciclo de uma assinatura existente (usado quando o usuário
+ * troca de plano - Pro<->Elite ou mensal<->anual - sem cancelar e criar
+ * assinatura nova). `updatePendingPayments: true` faz a cobrança que já
+ * tinha sido gerada mas ainda não foi paga (a do trial, por exemplo)
+ * também refletir o novo valor - sem isso, o Asaas só aplicaria a mudança
+ * a partir da cobrança seguinte, cobrando o valor antigo uma última vez.
+ * Sem proporcionalidade: a troca vale o valor cheio na próxima cobrança,
+ * sem calcular crédito do período já corrido no plano antigo.
+ */
+export async function updateAsaasSubscriptionValue(
+  subscriptionId: string,
+  params: { value: number; cycle: BillingCycle }
+): Promise<void> {
+  await asaasFetch(`/subscriptions/${subscriptionId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      value: params.value,
+      cycle: params.cycle === "annual" ? "YEARLY" : "MONTHLY",
+      updatePendingPayments: true,
+    }),
+  });
+}

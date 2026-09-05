@@ -6,7 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
 import ShareSummaryButton from "@/components/ShareSummaryButton";
 import ProfileEditForm from "@/components/ProfileEditForm";
-import CancelSubscriptionButton from "@/components/CancelSubscriptionButton";
+import SubscriptionManageModal from "@/components/SubscriptionManageModal";
 import GarminConnectButton from "@/components/GarminConnectButton";
 import Heatmap from "@/components/Heatmap";
 import { ReadinessBars } from "@/components/ReadinessBars";
@@ -18,13 +18,7 @@ import { isTerraConfigured } from "@/lib/terra";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthHeatmap, getWeekSummary } from "@/lib/data";
 import { getGarminConnection, getReadinessSnapshot } from "@/lib/wearables";
-import { PLAN_LABELS, hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
-
-const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
-  trialing: "Em teste grátis",
-  active: "Ativa",
-  past_due: "Pagamento pendente",
-};
+import { PLAN_LABELS, hasPlanFeature, type ProfilePlanTier, type BillingCycle } from "@/lib/plans";
 
 const RANGE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long" });
 
@@ -40,7 +34,9 @@ export default async function PerfilPage() {
   const [{ data: profile }, summary, heatmap] = await Promise.all([
     supabase
       .from("profiles")
-      .select("name, weekly_goal, plan_tier, is_founder, subscription_status, asaas_subscription_id")
+      .select(
+        "name, weekly_goal, plan_tier, billing_cycle, is_founder, subscription_status, asaas_subscription_id"
+      )
       .eq("id", user.id)
       .single(),
     getWeekSummary(supabase, user.id),
@@ -80,7 +76,17 @@ export default async function PerfilPage() {
       <div className="absolute -top-24 -right-20 w-72 h-72 rounded-full bg-accent opacity-20 blur-[2px] pointer-events-none" />
 
       <header className="px-5 pt-5 flex items-center justify-between relative">
-        <div className="w-9" />
+        {profile?.is_founder ? (
+          <div className="w-9" />
+        ) : (
+          <SubscriptionManageModal
+            planTier={planTier}
+            billingCycle={(profile?.billing_cycle as BillingCycle | null) ?? null}
+            subscriptionStatus={profile?.subscription_status ?? "none"}
+            canManage={canCancelSubscription}
+            canCancel={canCancelSubscription}
+          />
+        )}
         <div className="text-[13px] font-mono text-on-ink-soft uppercase tracking-[0.08em]">
           Resumo da semana
         </div>
@@ -238,30 +244,6 @@ export default async function PerfilPage() {
                 </span>
               </Link>
             )}
-          </div>
-        )}
-
-        {planTier !== "free" && !profile?.is_founder && (
-          <div className="px-5 pt-6">
-            <div className="text-[13px] font-mono font-semibold text-on-ink-soft uppercase tracking-[0.06em] mb-3">
-              Assinatura
-            </div>
-            <div className="p-4 rounded-lg bg-white/5 border border-white/10 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="text-[14px] font-semibold">Plano {PLAN_LABELS[planTier]}</div>
-                {profile?.subscription_status && SUBSCRIPTION_STATUS_LABELS[profile.subscription_status] && (
-                  <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-on-ink-faint">
-                    {SUBSCRIPTION_STATUS_LABELS[profile.subscription_status]}
-                  </span>
-                )}
-              </div>
-              {profile?.subscription_status === "past_due" && (
-                <Link href="/assinatura" className="text-[13px] text-accent underline underline-offset-2">
-                  Regularizar pagamento
-                </Link>
-              )}
-              {canCancelSubscription && <CancelSubscriptionButton />}
-            </div>
           </div>
         )}
 

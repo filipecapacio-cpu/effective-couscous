@@ -201,6 +201,15 @@ export function SparkleIcon({ size = 24, className, strokeWidth = 1.6 }: IconPro
   );
 }
 
+export function CreditCardIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <rect x="2.5" y="5.5" width="19" height="13" rx="1.5" />
+      <path d="M2.5 9.5h19M6 14.5h4" />
+    </svg>
+  );
+}
+
 export function SendIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
