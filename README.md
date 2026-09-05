@@ -77,8 +77,11 @@ A conexão usa a [Terra API](https://tryterra.co): ela hospeda a tela de
 login com a Garmin (o Onmode nunca vê a senha do usuário) e depois empurra
 sono, FC de repouso, body battery e estresse via webhook.
 
-1. Crie uma conta developer grátis em [tryterra.co](https://tryterra.co) —
-   o free tier cobre alguns usuários conectados, dá pra testar sem custo.
+1. **Atenção, isso tem custo**: a Terra não tem plano gratuito de verdade —
+   os planos pagos começam em ~US$400/mês (só reembolso em 30 dias se não
+   servir, sem free tier permanente). Confirme em
+   [tryterra.co/pricing](https://tryterra.co/pricing) antes de criar conta,
+   e só vale a pena com receita de assinantes que já cubra esse custo.
 2. Pegue seu `dev_id` e sua `x-api-key` no painel e adicione ao
    `.env.local`:
 
