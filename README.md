@@ -68,6 +68,47 @@ de quebrar.
 4. Reinicie o servidor. Cada plano gerado ou mensagem no chat consome
    crédito da sua conta Anthropic (modelo usado: Claude Opus 5).
 
+## Conectando wearables (Garmin, opcional)
+
+Sem isso o app funciona normal — só a seção "Wearable" do Perfil (disponível
+nos planos Pro e Elite) fica desativada.
+
+A conexão usa a [Terra API](https://tryterra.co): ela hospeda a tela de
+login com a Garmin (o Onmode nunca vê a senha do usuário) e depois empurra
+sono, FC de repouso, body battery e estresse via webhook.
+
+1. Crie uma conta developer grátis em [tryterra.co](https://tryterra.co) —
+   o free tier cobre alguns usuários conectados, dá pra testar sem custo.
+2. Pegue seu `dev_id` e sua `x-api-key` no painel e adicione ao
+   `.env.local`:
+
+   ```
+   TERRA_DEV_ID=
+   TERRA_API_KEY=
+   ```
+
+3. Rode [`supabase/migrations/0017_wearables.sql`](./supabase/migrations/0017_wearables.sql)
+   no SQL Editor do seu projeto Supabase (depois das migrations anteriores).
+4. No painel da Terra, configure o destino do webhook apontando pra
+   `https://<seu-domínio>/api/webhooks/terra` (em produção; em
+   desenvolvimento local isso exige expor a porta 3000, ex. com `ngrok`).
+   A Terra mostra um signing secret ao criar o destino — copie pra
+   `TERRA_SIGNING_SECRET` no `.env.local` (e nas envs da Vercel). **Sem
+   isso configurado corretamente, qualquer um poderia postar dados falsos
+   nesse endpoint** — o webhook valida a assinatura HMAC do header
+   `terra-signature` antes de processar qualquer payload.
+5. Reinicie o servidor. O botão "Conectar Garmin" no Perfil passa a abrir
+   o widget hospedado da Terra.
+
+### Testando em sandbox
+
+A Terra tem um provider de teste com dados simulados de sono, atividade e
+desconexão — vale conectar e observar os payloads reais chegando em
+`/api/webhooks/terra` (um `console.log` temporário no handler ajuda) antes
+de confiar cegamente no mapeamento de campos em `src/app/api/webhooks/terra/route.ts`
+— em especial "body battery", que é um recurso proprietário da Garmin sem
+um campo unificado 100% confirmado na documentação da Terra.
+
 ## Estrutura
 
 - `src/app/` — páginas (App Router): landing (`/`), `onboarding`,
@@ -82,6 +123,12 @@ de quebrar.
   cálculo de sequência/consistência.
 - `src/lib/ai-plan.ts` / `src/lib/anamnesis.ts` — schema do plano gerado
   por IA e tipos da anamnese.
+- `src/lib/terra.ts` — cliente da Terra API (widget de conexão, histórico,
+  verificação de assinatura) e `isTerraConfigured()`.
+- `src/lib/wearables.ts` — leitura da `wearable_data` e cálculo da
+  prontidão (combina Garmin com os registros manuais de treino).
+- `src/app/api/webhooks/` — endpoints que recebem eventos assíncronos do
+  Asaas (pagamentos) e da Terra (dados de wearable).
 - `supabase/migrations/` — schema do banco.
 
 ## Scripts

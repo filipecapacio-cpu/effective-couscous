@@ -7,13 +7,17 @@ import SetupNotice from "@/components/SetupNotice";
 import ShareSummaryButton from "@/components/ShareSummaryButton";
 import ProfileEditForm from "@/components/ProfileEditForm";
 import CancelSubscriptionButton from "@/components/CancelSubscriptionButton";
+import GarminConnectButton from "@/components/GarminConnectButton";
 import Heatmap from "@/components/Heatmap";
+import { ReadinessBars } from "@/components/ReadinessBars";
 import { Logo } from "@/components/Logo";
 import { SparkleIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAnthropicConfigured } from "@/lib/anthropic";
+import { isTerraConfigured } from "@/lib/terra";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthHeatmap, getWeekSummary } from "@/lib/data";
+import { getGarminConnection, getReadinessSnapshot } from "@/lib/wearables";
 import { PLAN_LABELS, hasPlanFeature, type ProfilePlanTier } from "@/lib/plans";
 
 const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
@@ -58,6 +62,15 @@ export default async function PerfilPage() {
     (profile?.subscription_status === "trialing" ||
       profile?.subscription_status === "active" ||
       profile?.subscription_status === "past_due");
+
+  const hasWearableAccess = hasPlanFeature(
+    profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
+    "pro"
+  );
+  const showWearableSection = isTerraConfigured() && hasWearableAccess;
+  const [garmin, readiness] = showWearableSection
+    ? await Promise.all([getGarminConnection(supabase, user.id), getReadinessSnapshot(supabase, user.id)])
+    : [null, null];
 
   const ringCircumference = 188.5;
   const ringOffset = ringCircumference * (1 - summary.consistency / 100);
@@ -175,6 +188,56 @@ export default async function PerfilPage() {
                 </div>
               </div>
             </Link>
+          </div>
+        )}
+
+        {isTerraConfigured() && (
+          <div className="px-5 pt-6">
+            <div className="text-[13px] font-mono font-semibold text-on-ink-soft uppercase tracking-[0.06em] mb-3">
+              Wearable
+            </div>
+            {hasWearableAccess ? (
+              <div className="p-4 rounded-lg bg-white/5 border border-white/10 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-[14px] font-semibold">Garmin</div>
+                  <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-on-ink-faint">
+                    {garmin?.status === "connected" ? "Conectado" : "Desconectado"}
+                  </span>
+                </div>
+                {readiness?.result && (
+                  <div className="flex items-center gap-3">
+                    <ReadinessBars score={readiness.result.score} size="sm" />
+                    <div>
+                      <div className="text-lg font-semibold">{readiness.result.score} de prontidão</div>
+                      <div className="text-[12px] text-on-ink-soft">
+                        {readiness.result.source === "combined"
+                          ? "Garmin + registro de treino"
+                          : readiness.result.source === "wearable"
+                            ? "Dados do Garmin"
+                            : "Registro de treino"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <GarminConnectButton connected={garmin?.status === "connected"} />
+              </div>
+            ) : (
+              <Link
+                href="/assinatura"
+                className="flex items-center gap-3 p-4 rounded-lg bg-white/5 border border-white/10"
+              >
+                <SparkleIcon size={18} className="text-accent flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14px] font-semibold">Conectar Garmin</div>
+                  <div className="text-[12.5px] text-on-ink-soft mt-0.5">
+                    Sono, FC de repouso, body battery e estresse direto no seu dashboard.
+                  </div>
+                </div>
+                <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-on-ink-faint flex-shrink-0">
+                  {PLAN_LABELS.pro}
+                </span>
+              </Link>
+            )}
           </div>
         )}
 
