@@ -28,14 +28,12 @@ export default function SubscriptionManageModal({
   billingCycle,
   subscriptionStatus,
   canManage,
-  canCancel,
 }: {
   isFounder: boolean;
   planTier: PlanTier | "free";
   billingCycle: BillingCycle | null;
   subscriptionStatus: string;
   canManage: boolean;
-  canCancel: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +124,7 @@ export default function SubscriptionManageModal({
 
                 {error && <div className="text-sm text-accent font-medium">{error}</div>}
 
-                {canCancel && (
+                {canManage && (
                   <div className="pt-2 border-t border-white/10">
                     <CancelSubscriptionButton />
                   </div>

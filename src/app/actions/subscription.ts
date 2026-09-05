@@ -11,7 +11,14 @@ import {
   updateAsaasPaymentValue,
   updateAsaasSubscriptionValue,
 } from "@/lib/asaas";
-import { TRIAL_DAYS, applyDiscount, planPrice, type PlanTier, type BillingCycle } from "@/lib/plans";
+import {
+  TRIAL_DAYS,
+  applyDiscount,
+  canManageSubscription,
+  planPrice,
+  type PlanTier,
+  type BillingCycle,
+} from "@/lib/plans";
 
 /**
  * Inicia o trial de 7 dias no plano escolhido: cria cliente + assinatura
@@ -177,12 +184,12 @@ export async function cancelSubscription(): Promise<CancelSubscriptionResult> {
     return { ok: true };
   }
 
-  if (!profile.asaas_subscription_id) {
+  if (!canManageSubscription(profile)) {
     return { error: "Você não tem uma assinatura paga pra cancelar." };
   }
 
   try {
-    await cancelAsaasSubscription(profile.asaas_subscription_id);
+    await cancelAsaasSubscription(profile.asaas_subscription_id!);
   } catch (err) {
     console.error("[cancelSubscription] Asaas cancel failed:", err);
     return { error: "Não deu pra cancelar agora. Tenta de novo em instantes ou fala com o suporte." };
@@ -229,7 +236,7 @@ export async function changePlan(formData: FormData): Promise<ChangePlanResult> 
   const admin = createAdminClient();
   const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .select("asaas_subscription_id, subscription_status, plan_tier, billing_cycle")
+    .select("asaas_subscription_id, subscription_status, plan_tier, billing_cycle, coupon_discount_percent")
     .eq("id", user.id)
     .single();
 
@@ -238,12 +245,7 @@ export async function changePlan(formData: FormData): Promise<ChangePlanResult> 
     return { error: "Não deu pra trocar de plano agora. Tenta de novo em instantes." };
   }
 
-  const canChange =
-    !!profile.asaas_subscription_id &&
-    (profile.subscription_status === "trialing" ||
-      profile.subscription_status === "active" ||
-      profile.subscription_status === "past_due");
-  if (!canChange) {
+  if (!canManageSubscription(profile)) {
     return { error: "Você não tem uma assinatura ativa pra trocar. Escolha um plano em /assinatura." };
   }
 
@@ -251,11 +253,19 @@ export async function changePlan(formData: FormData): Promise<ChangePlanResult> 
     return { error: "Você já está nesse plano." };
   }
 
+  // Ainda em trial: a cobrança pendente é a PRIMEIRA (a que pode ter saído
+  // com desconto de cupom - ver startPlan). Sem isso, trocar de plano
+  // durante o trial apagava o desconto e cobrava o valor cheio do plano
+  // novo, mesmo pra quem tinha usado cupom. Uma vez em "active"/"past_due"
+  // a cobrança pendente já é uma renovação normal, sem desconto nenhum.
+  const basePrice = planPrice(tier, cycle);
+  const value =
+    profile.subscription_status === "trialing" && profile.coupon_discount_percent
+      ? applyDiscount(basePrice, profile.coupon_discount_percent)
+      : basePrice;
+
   try {
-    await updateAsaasSubscriptionValue(profile.asaas_subscription_id!, {
-      value: planPrice(tier, cycle),
-      cycle,
-    });
+    await updateAsaasSubscriptionValue(profile.asaas_subscription_id!, { value, cycle });
   } catch (err) {
     console.error("[changePlan] Asaas update failed:", err);
     return { error: "Não deu pra trocar de plano agora. Tenta de novo em instantes." };

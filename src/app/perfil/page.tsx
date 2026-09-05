@@ -18,7 +18,13 @@ import { isTerraConfigured } from "@/lib/terra";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthHeatmap, getWeekSummary } from "@/lib/data";
 import { getGarminConnection, getReadinessSnapshot } from "@/lib/wearables";
-import { PLAN_LABELS, hasPlanFeature, type ProfilePlanTier, type BillingCycle } from "@/lib/plans";
+import {
+  PLAN_LABELS,
+  canManageSubscription,
+  hasPlanFeature,
+  type ProfilePlanTier,
+  type BillingCycle,
+} from "@/lib/plans";
 
 const RANGE_FMT = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long" });
 
@@ -52,12 +58,7 @@ export default async function PerfilPage() {
     "elite"
   );
   const planTier = (profile?.plan_tier ?? "free") as ProfilePlanTier;
-  const canCancelSubscription =
-    !profile?.is_founder &&
-    !!profile?.asaas_subscription_id &&
-    (profile?.subscription_status === "trialing" ||
-      profile?.subscription_status === "active" ||
-      profile?.subscription_status === "past_due");
+  const canManage = canManageSubscription(profile);
 
   const hasWearableAccess = hasPlanFeature(
     profile as { plan_tier: ProfilePlanTier; is_founder: boolean } | null,
@@ -81,8 +82,7 @@ export default async function PerfilPage() {
           planTier={planTier}
           billingCycle={(profile?.billing_cycle as BillingCycle | null) ?? null}
           subscriptionStatus={profile?.subscription_status ?? "none"}
-          canManage={canCancelSubscription}
-          canCancel={canCancelSubscription}
+          canManage={canManage}
         />
         <div className="text-[13px] font-mono text-on-ink-soft uppercase tracking-[0.08em]">
           Resumo da semana
