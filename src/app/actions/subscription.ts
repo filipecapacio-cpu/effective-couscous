@@ -22,9 +22,10 @@ import {
 import { isValidCpfCnpj, onlyDigits } from "@/lib/cpfCnpj";
 
 /**
- * Inicia o trial de 7 dias no plano escolhido: cria cliente + assinatura
- * no Asaas (1ª cobrança só vence depois do trial) e libera o acesso do
- * usuário imediatamente com subscription_status = "trialing".
+ * Inicia a assinatura do plano escolhido: cria cliente + assinatura no
+ * Asaas (1ª cobrança já vence imediatamente, sem período de teste grátis) e
+ * deixa o profile em subscription_status = "trialing" só até o pagamento
+ * confirmar - até lá o middleware não libera acesso pago nenhum.
  */
 export type StartPlanResult = { error: string } | null;
 
@@ -130,9 +131,9 @@ export async function startPlan(formData: FormData): Promise<StartPlanResult> {
     .eq("id", user.id);
 
   if (profileUpdateError) {
-    // A assinatura já existe no Asaas e vai cobrar de verdade depois do
-    // trial - sem essa checagem, um erro aqui (rede, DB) deixava o usuário
-    // com uma cobrança futura real mas sem plan_tier/asaas_subscription_id
+    // A assinatura já existe no Asaas e a primeira cobrança já foi gerada -
+    // sem essa checagem, um erro aqui (rede, DB) deixava o usuário com uma
+    // cobrança real pendente mas sem plan_tier/asaas_subscription_id
     // salvos, sem acesso pago e sem como cancelar (canManageSubscription
     // depende desse campo). Desfaz no Asaas em vez de deixar isso pendurado.
     console.error("[startPlan] failed to save profile after creating Asaas subscription:", profileUpdateError);
@@ -144,7 +145,10 @@ export async function startPlan(formData: FormData): Promise<StartPlanResult> {
     return { error: "Não deu pra concluir sua assinatura agora. Tenta de novo em instantes." };
   }
 
-  redirect("/dashboard");
+  // Sem trial, o middleware já bloqueia /dashboard até o pagamento confirmar
+  // - manda direto pra tela que mostra o link de pagamento, sem passar por
+  // um redirect que só ia voltar pra cá de qualquer jeito.
+  redirect("/assinatura");
 }
 
 /** Fica no Free — sem trial, sem cobrança, acesso liberado na hora. */
@@ -237,10 +241,10 @@ export type ChangePlanResult = { error: string } | { ok: true };
 
 /**
  * Troca de plano (Pro <-> Elite) e/ou de ciclo (mensal <-> anual) de quem
- * já tem assinatura em trial/ativa/em atraso - atualiza a MESMA assinatura
- * no Asaas em vez de cancelar e criar outra, então não reinicia o trial
- * nem gera uma segunda cobrança. Sem proporcionalidade: a mudança vale o
- * valor cheio do novo plano já na próxima cobrança.
+ * já tem assinatura pendente de pagamento, ativa ou em atraso - atualiza a
+ * MESMA assinatura no Asaas em vez de cancelar e criar outra, então não
+ * gera uma segunda cobrança. Sem proporcionalidade: a mudança vale o valor
+ * cheio do novo plano já na próxima cobrança.
  */
 export async function changePlan(formData: FormData): Promise<ChangePlanResult> {
   const tier = String(formData.get("tier")) as PlanTier;
@@ -275,11 +279,12 @@ export async function changePlan(formData: FormData): Promise<ChangePlanResult> 
     return { error: "Você já está nesse plano." };
   }
 
-  // Ainda em trial: a cobrança pendente é a PRIMEIRA (a que pode ter saído
-  // com desconto de cupom - ver startPlan). Sem isso, trocar de plano
-  // durante o trial apagava o desconto e cobrava o valor cheio do plano
-  // novo, mesmo pra quem tinha usado cupom. Uma vez em "active"/"past_due"
-  // a cobrança pendente já é uma renovação normal, sem desconto nenhum.
+  // Ainda não pagou a primeira cobrança (status "trialing"): ela é a que
+  // pode ter saído com desconto de cupom - ver startPlan. Sem isso, trocar
+  // de plano antes de pagar apagava o desconto e cobrava o valor cheio do
+  // plano novo, mesmo pra quem tinha usado cupom. Uma vez em
+  // "active"/"past_due" a cobrança pendente já é uma renovação normal, sem
+  // desconto nenhum.
   const basePrice = planPrice(tier, cycle);
   const value =
     profile.subscription_status === "trialing" && profile.coupon_discount_percent

@@ -74,8 +74,8 @@ export default function TermosPage() {
               tela de assinatura no momento da contratação.
             </li>
             <li>
-              Todo plano pago inclui 7 dias de teste grátis: a primeira cobrança só ocorre depois
-              desse período.
+              Ao assinar um plano pago, a primeira cobrança é gerada imediatamente, no valor e
+              ciclo (mensal ou anual) escolhidos.
             </li>
             <li>
               A cobrança recorrente é processada pela Asaas Gestão Financeira (

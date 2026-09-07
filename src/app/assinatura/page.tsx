@@ -8,7 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { refreshSubscriptionStatus } from "@/app/actions/subscription";
 import PlanPicker from "@/components/PlanPicker";
-import { PLAN_LABELS, TRIAL_DAYS } from "@/lib/plans";
+import { PLAN_LABELS } from "@/lib/plans";
 
 export default async function AssinaturaPage() {
   if (!isSupabaseConfigured()) return <SetupNotice />;
@@ -41,10 +41,10 @@ export default async function AssinaturaPage() {
 
   if (hasPaidAccess) redirect("/dashboard");
 
-  // Trial vencido ou pagamento em atraso: já existe assinatura, só falta
-  // pagar. "canceled" fica de fora de propósito - quem cancelou vê o
-  // seletor de planos de novo (pra reassinar ou voltar pro Free), não uma
-  // cobrança antiga que já não existe mais no Asaas.
+  // Primeira cobrança ainda não paga ou pagamento em atraso: já existe
+  // assinatura, só falta pagar. "canceled" fica de fora de propósito - quem
+  // cancelou vê o seletor de planos de novo (pra reassinar ou voltar pro
+  // Free), não uma cobrança antiga que já não existe mais no Asaas.
   const pendingPayment =
     profile?.has_chosen_plan &&
     profile.checkout_url &&
@@ -65,7 +65,7 @@ export default async function AssinaturaPage() {
             <p className="text-ink-soft text-[15px]">
               {profile?.subscription_status === "past_due"
                 ? "Seu último pagamento não foi confirmado. Regularize pra manter o acesso."
-                : `Seu trial de ${TRIAL_DAYS} dias do plano ${PLAN_LABELS[profile!.plan_tier as "pro" | "elite"]} terminou. Confirme o pagamento pra continuar.`}
+                : `Falta só confirmar o pagamento do plano ${PLAN_LABELS[profile!.plan_tier as "pro" | "elite"]} pra ativar sua assinatura.`}
             </p>
           </div>
 

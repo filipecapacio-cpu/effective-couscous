@@ -48,6 +48,10 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
+    // TRIAL_DAYS é 0 (sem período de teste grátis) - na prática trial_ends_at
+    // já fica no passado assim que a assinatura é criada, então isso quase
+    // nunca dá true. Mantido assim (em vez de tirar o campo) porque volta a
+    // funcionar sozinho se um dia reativarem um período de trial de verdade.
     const trialActive =
       profile?.subscription_status === "trialing" &&
       !!profile.trial_ends_at &&

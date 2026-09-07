@@ -31,10 +31,11 @@ export function hasPlanFeature(
 }
 
 /**
- * Tem uma assinatura paga (trial, ativa ou em atraso) que dá pra trocar ou
- * cancelar - fonte única dessa checagem, que antes estava duplicada em 3
- * lugares (tela de Perfil, cancelSubscription, changePlan) e corria o risco
- * de um lugar ficar desalinhado do outro se um novo status fosse criado.
+ * Tem uma assinatura paga (aguardando primeiro pagamento, ativa ou em
+ * atraso) que dá pra trocar ou cancelar - fonte única dessa checagem, que
+ * antes estava duplicada em 3 lugares (tela de Perfil, cancelSubscription,
+ * changePlan) e corria o risco de um lugar ficar desalinhado do outro se um
+ * novo status fosse criado.
  */
 export function canManageSubscription(
   profile: { asaas_subscription_id?: string | null; subscription_status?: string | null } | null | undefined
@@ -47,7 +48,8 @@ export function canManageSubscription(
   );
 }
 
-export const TRIAL_DAYS = 7;
+/** Sem período de teste grátis - a primeira cobrança vence imediatamente ao assinar. */
+export const TRIAL_DAYS = 0;
 
 export const PLAN_PRICES: Record<PlanTier, Record<BillingCycle, number>> = {
   pro: { monthly: 19.9, annual: 149.9 },

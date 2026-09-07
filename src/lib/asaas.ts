@@ -78,11 +78,10 @@ export type AsaasFirstPayment = {
 };
 
 /**
- * Cria a assinatura recorrente (Pro ou Elite, mensal ou anual) com 7 dias
- * de trial: a primeira cobrança só vence em `TRIAL_DAYS` dias — o usuário
- * usa o plano completo até lá, e se pagar a tempo a renovação já é
- * automática. O `invoiceUrl` do primeiro pagamento é o link de checkout
- * (Pix, boleto ou cartão) que mostramos na tela de assinatura.
+ * Cria a assinatura recorrente (Pro ou Elite, mensal ou anual) - sem período
+ * de teste grátis, a primeira cobrança já vence imediatamente
+ * (`TRIAL_DAYS` = 0). O `invoiceUrl` do primeiro pagamento é o link de
+ * checkout (Pix, boleto ou cartão) que mostramos na tela de assinatura.
  */
 export async function createAsaasSubscription(params: {
   customerId: string;
@@ -142,8 +141,9 @@ export async function updateAsaasPaymentValue(paymentId: string, value: number):
  * Troca o valor/ciclo de uma assinatura existente (usado quando o usuário
  * troca de plano - Pro<->Elite ou mensal<->anual - sem cancelar e criar
  * assinatura nova). `updatePendingPayments: true` faz a cobrança que já
- * tinha sido gerada mas ainda não foi paga (a do trial, por exemplo)
- * também refletir o novo valor - sem isso, o Asaas só aplicaria a mudança
+ * tinha sido gerada mas ainda não foi paga (a primeira cobrança, por
+ * exemplo, se o usuário trocar de plano antes de pagá-la) também refletir
+ * o novo valor - sem isso, o Asaas só aplicaria a mudança
  * a partir da cobrança seguinte, cobrando o valor antigo uma última vez.
  * Sem proporcionalidade: a troca vale o valor cheio na próxima cobrança,
  * sem calcular crédito do período já corrido no plano antigo.

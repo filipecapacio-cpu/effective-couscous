@@ -8,7 +8,7 @@ import { changePlan } from "@/app/actions/subscription";
 import { PLAN_LABELS, formatBRL, planPrice, type PlanTier, type BillingCycle } from "@/lib/plans";
 
 const STATUS_LABELS: Record<string, string> = {
-  trialing: "Em teste grátis",
+  trialing: "Aguardando pagamento",
   active: "Ativa",
   past_due: "Pagamento pendente",
   canceled: "Cancelada",

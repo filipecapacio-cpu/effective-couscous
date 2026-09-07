@@ -7,7 +7,6 @@ import {
   PLAN_FEATURES,
   PLAN_LABELS,
   PLAN_TAGLINES,
-  TRIAL_DAYS,
   formatBRL,
   planPrice,
 } from "@/lib/plans";
@@ -27,7 +26,7 @@ export default function PlanPicker() {
       <div className="flex flex-col gap-2">
         <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-3xl">Escolha seu plano</h1>
         <p className="text-ink-soft text-[15px]">
-          {TRIAL_DAYS} dias grátis em qualquer plano pago. Cancele quando quiser antes do fim do trial.
+          Assine agora e cancele quando quiser, sem multa nem fidelidade.
         </p>
       </div>
 
@@ -117,7 +116,7 @@ export default function PlanPicker() {
                 disabled={pending}
                 className="h-12 px-5 inline-flex items-center justify-center rounded bg-ink text-paper font-semibold text-[15px] hover:bg-accent transition-colors disabled:opacity-60"
               >
-                {pending ? "Um momento…" : "Começar trial — plano anual"}
+                {pending ? "Um momento…" : "Assinar — plano anual"}
               </button>
             </form>
             <form action={formAction}>
