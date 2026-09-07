@@ -26,10 +26,17 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   }
 
   const supabase = await createClient();
+  const origin = await siteOrigin();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { name } },
+    options: {
+      data: { name },
+      // Sem isso, o link do e-mail de confirmação de cadastro caía no
+      // destino padrão de /auth/confirm (redefinir senha - feito pro link
+      // de "esqueci minha senha") em vez de continuar pro onboarding.
+      emailRedirectTo: `${origin}/auth/confirm?next=/assinatura`,
+    },
   });
 
   if (error) {
