@@ -1,32 +1,5 @@
 import { forwardRef } from "react";
-import { ReadinessBars } from "@/components/ReadinessBars";
-import {
-  BikeIcon,
-  DumbbellIcon,
-  FlameIcon,
-  FootprintsIcon,
-  HeartPulseIcon,
-  MoveIcon,
-  SwordsIcon,
-  WavesIcon,
-  WindIcon,
-  YogaIcon,
-} from "@/components/icons";
 import type { IntensityLabel, WorkoutModality } from "@/lib/workoutLog";
-
-// "Descanso" não é um treino a completar/compartilhar - não entra aqui.
-const MODALITY_ICON: Record<Exclude<WorkoutModality, "Descanso">, React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>> = {
-  Luta: SwordsIcon,
-  Corrida: FootprintsIcon,
-  "Musculação": DumbbellIcon,
-  Mobilidade: MoveIcon,
-  "Cardio/HIIT": HeartPulseIcon,
-  Alongamento: WindIcon,
-  "Natação": WavesIcon,
-  Ciclismo: BikeIcon,
-  Yoga: YogaIcon,
-  "Funcional/Crossfit": FlameIcon,
-};
 
 export type WorkoutShareCardProps = {
   modality: Exclude<WorkoutModality, "Descanso">;
@@ -37,120 +10,68 @@ export type WorkoutShareCardProps = {
   format: "story" | "square";
 };
 
+const TEXT_SHADOW = "0 1px 3px rgba(0,0,0,0.7), 0 3px 12px rgba(0,0,0,0.45)";
+
 /**
- * Card de resumo do treino pra exportar como imagem (estilo Strava).
- * Só usa dado que já existe de verdade no registro do treino - sem métrica
- * inventada por modalidade (pace, volume etc.) que o app ainda não coleta.
+ * Card de resumo do treino pra exportar como imagem e virar sticker no
+ * Stories/feed. Sem painel/caixa nenhuma atrás — texto branco direto sobre
+ * a foto do usuário, com sombra pra continuar legível em qualquer fundo,
+ * igual ao card de verdade do Strava (wordmark em cima, colunas de stat
+ * embaixo). Só usa dado que já existe de verdade no registro do treino -
+ * sem métrica inventada por modalidade (pace, volume etc.) que o app ainda
+ * não coleta.
  */
 const WorkoutShareCard = forwardRef<HTMLDivElement, WorkoutShareCardProps>(function WorkoutShareCard(
   { modality, durationMin, intensityLabel, intensityScore, dateLabel, format },
   ref
 ) {
-  const Icon = MODALITY_ICON[modality];
   const isStory = format === "story";
-  // --ink-faint (usado no resto do app) é um cinza pensado pra ficar sobre
-  // o fundo sólido de --paper. Nesse card o fundo é semitransparente sobre
-  // uma foto qualquer - precisa de mais contraste pra continuar legível.
-  const faint = "rgba(255, 255, 255, 0.58)";
-
   const hasDuration = durationMin != null;
   const hasIntensity = intensityScore != null;
-  const readinessScore = hasIntensity ? intensityScore * 10 : 50;
 
-  const headline = hasDuration
-    ? { value: String(durationMin), unit: "MIN", caption: "tempo de treino" }
-    : hasIntensity
-      ? { value: String(intensityScore), unit: "/10", caption: "intensidade do treino" }
-      : { value: "OK", unit: "", caption: "treino concluído" };
-
-  // Se a duração virou o número grande, intensidade ainda cabe como stat -
-  // se não tem duração, a intensidade já É o número grande, não repete aqui.
-  const stats: { label: string; value: string }[] = [];
-  if (hasDuration && intensityLabel) {
-    stats.push({
-      label: "INTENSIDADE",
-      value: hasIntensity ? `${intensityLabel.toUpperCase()} ${intensityScore}/10` : intensityLabel.toUpperCase(),
+  // Sempre no máximo 3 colunas (modalidade + uma métrica principal + data) -
+  // igual ao card do Strava, pra não espremer numa largura de sticker
+  // estreita. Duração tem prioridade sobre intensidade quando as duas
+  // existem (mesma regra que já valia no header grande da versão anterior).
+  const cols: { label: string; value: string }[] = [{ label: "Modalidade", value: modality }];
+  if (hasDuration) {
+    cols.push({ label: "Duração", value: `${durationMin} min` });
+  } else if (intensityLabel) {
+    cols.push({
+      label: "Intensidade",
+      value: hasIntensity ? `${intensityLabel} ${intensityScore}/10` : intensityLabel,
     });
   }
-  stats.push({ label: "DATA", value: dateLabel });
+  cols.push({ label: "Data", value: dateLabel });
 
   return (
     <div
       ref={ref}
-      className="text-ink flex flex-col justify-between box-border"
+      className="flex flex-col gap-3.5 box-border text-white"
       style={{
-        width: isStory ? 270 : 320,
-        height: isStory ? 480 : 320,
-        padding: isStory ? "24px 22px" : "24px 26px",
+        width: isStory ? 260 : 340,
+        padding: 6,
         fontFamily: "var(--font-sans)",
-        // Painel semitransparente, não a cor sólida de --paper: isso é pra
-        // virar sticker no Stories/feed, com a própria foto do usuário
-        // atrás. Opaco de menos e o texto branco some numa foto clara;
-        // esse tom escurece qualquer foto o suficiente pra manter a
-        // legibilidade sem virar um retângulo preto cobrindo tudo.
-        background: "rgba(8, 8, 10, 0.68)",
-        border: "1px solid rgba(255, 255, 255, 0.14)",
-        borderRadius: 22,
-        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.35)",
       }}
     >
-      {/* top row */}
-      <div className="flex items-center justify-between">
-        <ReadinessBars score={readinessScore} size="sm" />
-        <div
-          className="flex items-center gap-1.5 font-mono text-[11px] tracking-[0.1em] uppercase"
-          style={{ color: faint }}
-        >
-          <Icon size={12} className="text-accent" strokeWidth={2.2} />
-          {modality}
-        </div>
+      <div className="flex items-center gap-2" style={{ textShadow: TEXT_SHADOW }}>
+        <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
+        <span className="font-display font-extrabold uppercase tracking-[0.01em] text-[17px] leading-none">
+          onmode
+        </span>
       </div>
 
-      {/* headline metric */}
-      <div>
-        <div
-          className="font-display font-extrabold tracking-[-0.04em] flex items-baseline gap-2"
-          style={{ fontSize: isStory ? 76 : 62, lineHeight: 0.85, fontVariantNumeric: "tabular-nums" }}
-        >
-          {headline.value}
-          {headline.unit && (
-            <span
-              className="font-mono font-medium tracking-[0.08em]"
-              style={{ fontSize: isStory ? 15 : 13, color: faint }}
-            >
-              {headline.unit}
-            </span>
-          )}
-        </div>
-        <div className="font-mono text-[11px] tracking-[0.1em] uppercase mt-1.5" style={{ color: faint }}>
-          {headline.caption}
-        </div>
-      </div>
-
-      {/* stats row */}
-      <div className="flex" style={{ gap: isStory ? 16 : 20 }}>
-        {stats.map((s) => (
-          <div key={s.label}>
-            <div className="font-display font-bold tracking-[-0.02em] text-[17px] whitespace-nowrap">{s.value}</div>
-            <div className="font-mono text-[8.5px] tracking-[0.08em] mt-[3px] whitespace-nowrap" style={{ color: faint }}>
-              {s.label}
+      <div className="flex" style={{ gap: isStory ? 20 : 28 }}>
+        {cols.map((c) => (
+          <div key={c.label} style={{ textShadow: TEXT_SHADOW }}>
+            <div className="font-mono text-[10px] tracking-[0.08em] uppercase opacity-85 whitespace-nowrap">
+              {c.label}
+            </div>
+            <div className="font-display font-bold tracking-[-0.02em] text-[21px] leading-tight whitespace-nowrap mt-0.5">
+              {c.value}
             </div>
           </div>
         ))}
-      </div>
-
-      {/* footer */}
-      <div
-        className="pt-3 flex items-center justify-between"
-        style={{ borderTop: "1px solid rgba(255, 255, 255, 0.14)" }}
-      >
-        <div className="flex items-center gap-2 font-display font-bold text-[13px] tracking-[0.02em]">
-          <span className="w-1.5 h-1.5 bg-accent flex-shrink-0" />
-          TREINO CONCLUÍDO
-        </div>
-        <span className="font-mono text-[9px] tracking-[0.1em] uppercase" style={{ color: faint }}>
-          onmode
-        </span>
       </div>
     </div>
   );
