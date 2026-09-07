@@ -60,9 +60,11 @@ export default function PrivacidadePage() {
             respostas geradas.
           </p>
           <p>
-            <strong>Dados de pagamento:</strong> nome e e-mail, enviados ao nosso processador de
-            pagamentos para criar sua cobrança. A Onmode não recebe nem armazena dados do seu cartão
-            de crédito — isso é feito diretamente pelo processador de pagamentos (item 4).
+            <strong>Dados de pagamento:</strong> nome, e-mail e CPF/CNPJ, enviados ao nosso
+            processador de pagamentos para criar sua cobrança — o CPF/CNPJ é exigido por ele para
+            emitir a cobrança e só é pedido se você assinar um plano pago. A Onmode não recebe nem
+            armazena dados do seu cartão de crédito — isso é feito diretamente pelo processador de
+            pagamentos (item 4).
           </p>
           <p>
             <strong>Dados técnicos:</strong> apenas o cookie de sessão que mantém você conectado à

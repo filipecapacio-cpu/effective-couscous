@@ -16,6 +16,7 @@ const PLAN_EMOJI: Record<"pro" | "elite", string> = { pro: "⚡", elite: "👑" 
 
 export default function PlanPicker() {
   const [coupon, setCoupon] = useState("");
+  const [cpfCnpj, setCpfCnpj] = useState("");
   const [state, formAction, pending] = useActionState<StartPlanResult, FormData>(
     (_prev, formData) => startPlan(formData),
     null
@@ -29,6 +30,20 @@ export default function PlanPicker() {
           {TRIAL_DAYS} dias grátis em qualquer plano pago. Cancele quando quiser antes do fim do trial.
         </p>
       </div>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium">CPF ou CNPJ</span>
+        <input
+          value={cpfCnpj}
+          onChange={(e) => setCpfCnpj(e.target.value.replace(/\D/g, "").slice(0, 14))}
+          inputMode="numeric"
+          placeholder="Só números"
+          className="h-11 rounded border border-line bg-paper px-3.5 text-[15px] outline-none focus:border-ink"
+        />
+        <span className="text-xs text-ink-faint">
+          Exigido pra emitir a cobrança - só pedimos aqui se você escolher um plano pago.
+        </span>
+      </label>
 
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">Cupom de desconto — opcional</span>
@@ -96,6 +111,7 @@ export default function PlanPicker() {
               <input type="hidden" name="tier" value={tier} />
               <input type="hidden" name="cycle" value="annual" />
               <input type="hidden" name="coupon" value={coupon} />
+              <input type="hidden" name="cpfCnpj" value={cpfCnpj} />
               <button
                 type="submit"
                 disabled={pending}
@@ -108,6 +124,7 @@ export default function PlanPicker() {
               <input type="hidden" name="tier" value={tier} />
               <input type="hidden" name="cycle" value="monthly" />
               <input type="hidden" name="coupon" value={coupon} />
+              <input type="hidden" name="cpfCnpj" value={cpfCnpj} />
               <button
                 type="submit"
                 disabled={pending}

@@ -19,6 +19,7 @@ import {
   type PlanTier,
   type BillingCycle,
 } from "@/lib/plans";
+import { isValidCpfCnpj, onlyDigits } from "@/lib/cpfCnpj";
 
 /**
  * Inicia o trial de 7 dias no plano escolhido: cria cliente + assinatura
@@ -31,9 +32,13 @@ export async function startPlan(formData: FormData): Promise<StartPlanResult> {
   const tier = String(formData.get("tier")) as PlanTier;
   const cycle = String(formData.get("cycle")) as BillingCycle;
   const couponCode = String(formData.get("coupon") ?? "").trim().toUpperCase();
+  const cpfCnpj = onlyDigits(String(formData.get("cpfCnpj") ?? ""));
 
   if (tier !== "pro" && tier !== "elite") return { error: "Plano inválido." };
   if (cycle !== "monthly" && cycle !== "annual") return { error: "Ciclo inválido." };
+  // A Asaas recusa criar qualquer cobrança sem CPF/CNPJ válido do cliente -
+  // checa aqui antes de gastar uma chamada com ela.
+  if (!isValidCpfCnpj(cpfCnpj)) return { error: "Digite um CPF ou CNPJ válido." };
 
   const supabase = await createClient();
   const {
@@ -73,6 +78,7 @@ export async function startPlan(formData: FormData): Promise<StartPlanResult> {
     customer = await createAsaasCustomer({
       name: profile?.name || user.email || "Usuário Onmode",
       email: user.email ?? "",
+      cpfCnpj,
       externalReference: user.id,
     });
     ({ subscription, invoiceUrl, firstPaymentId } = await createAsaasSubscription({
@@ -115,6 +121,7 @@ export async function startPlan(formData: FormData): Promise<StartPlanResult> {
       asaas_customer_id: customer.id,
       asaas_subscription_id: subscription.id,
       checkout_url: invoiceUrl,
+      cpf_cnpj: cpfCnpj,
       has_chosen_plan: true,
       subscription_updated_at: new Date().toISOString(),
       coupon_id: coupon?.id ?? null,

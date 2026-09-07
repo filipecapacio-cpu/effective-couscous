@@ -44,10 +44,16 @@ async function asaasFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export type AsaasCustomer = { id: string; name: string; email: string };
 
-/** Cria um cliente no Asaas para o usuário do Onmode. */
+/**
+ * Cria um cliente no Asaas para o usuário do Onmode. cpfCnpj é obrigatório -
+ * a Asaas recusa criar qualquer cobrança sem isso ("Para criar esta cobrança
+ * é necessário preencher o CPF ou CNPJ do cliente"), exigência da própria
+ * Asaas/Receita pra emissão fiscal, não coisa nossa.
+ */
 export async function createAsaasCustomer(params: {
   name: string;
   email: string;
+  cpfCnpj: string;
   externalReference: string;
 }): Promise<AsaasCustomer> {
   return asaasFetch<AsaasCustomer>("/customers", {
@@ -55,6 +61,7 @@ export async function createAsaasCustomer(params: {
     body: JSON.stringify({
       name: params.name,
       email: params.email,
+      cpfCnpj: params.cpfCnpj,
       externalReference: params.externalReference,
     }),
   });
