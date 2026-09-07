@@ -48,6 +48,10 @@ const WorkoutShareCard = forwardRef<HTMLDivElement, WorkoutShareCardProps>(funct
 ) {
   const Icon = MODALITY_ICON[modality];
   const isStory = format === "story";
+  // --ink-faint (usado no resto do app) é um cinza pensado pra ficar sobre
+  // o fundo sólido de --paper. Nesse card o fundo é semitransparente sobre
+  // uma foto qualquer - precisa de mais contraste pra continuar legível.
+  const faint = "rgba(255, 255, 255, 0.58)";
 
   const hasDuration = durationMin != null;
   const hasIntensity = intensityScore != null;
@@ -73,18 +77,30 @@ const WorkoutShareCard = forwardRef<HTMLDivElement, WorkoutShareCardProps>(funct
   return (
     <div
       ref={ref}
-      className="bg-paper text-ink border border-line flex flex-col justify-between box-border"
+      className="text-ink flex flex-col justify-between box-border"
       style={{
         width: isStory ? 270 : 320,
         height: isStory ? 480 : 320,
         padding: isStory ? "24px 22px" : "24px 26px",
         fontFamily: "var(--font-sans)",
+        // Painel semitransparente, não a cor sólida de --paper: isso é pra
+        // virar sticker no Stories/feed, com a própria foto do usuário
+        // atrás. Opaco de menos e o texto branco some numa foto clara;
+        // esse tom escurece qualquer foto o suficiente pra manter a
+        // legibilidade sem virar um retângulo preto cobrindo tudo.
+        background: "rgba(8, 8, 10, 0.68)",
+        border: "1px solid rgba(255, 255, 255, 0.14)",
+        borderRadius: 22,
+        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.35)",
       }}
     >
       {/* top row */}
       <div className="flex items-center justify-between">
         <ReadinessBars score={readinessScore} size="sm" />
-        <div className="flex items-center gap-1.5 font-mono text-[11px] tracking-[0.1em] uppercase text-ink-faint">
+        <div
+          className="flex items-center gap-1.5 font-mono text-[11px] tracking-[0.1em] uppercase"
+          style={{ color: faint }}
+        >
           <Icon size={12} className="text-accent" strokeWidth={2.2} />
           {modality}
         </div>
@@ -98,12 +114,17 @@ const WorkoutShareCard = forwardRef<HTMLDivElement, WorkoutShareCardProps>(funct
         >
           {headline.value}
           {headline.unit && (
-            <span className="font-mono font-medium text-ink-faint tracking-[0.08em]" style={{ fontSize: isStory ? 15 : 13 }}>
+            <span
+              className="font-mono font-medium tracking-[0.08em]"
+              style={{ fontSize: isStory ? 15 : 13, color: faint }}
+            >
               {headline.unit}
             </span>
           )}
         </div>
-        <div className="font-mono text-[11px] tracking-[0.1em] uppercase text-ink-faint mt-1.5">{headline.caption}</div>
+        <div className="font-mono text-[11px] tracking-[0.1em] uppercase mt-1.5" style={{ color: faint }}>
+          {headline.caption}
+        </div>
       </div>
 
       {/* stats row */}
@@ -111,18 +132,25 @@ const WorkoutShareCard = forwardRef<HTMLDivElement, WorkoutShareCardProps>(funct
         {stats.map((s) => (
           <div key={s.label}>
             <div className="font-display font-bold tracking-[-0.02em] text-[17px] whitespace-nowrap">{s.value}</div>
-            <div className="font-mono text-[8.5px] tracking-[0.08em] text-ink-faint mt-[3px] whitespace-nowrap">{s.label}</div>
+            <div className="font-mono text-[8.5px] tracking-[0.08em] mt-[3px] whitespace-nowrap" style={{ color: faint }}>
+              {s.label}
+            </div>
           </div>
         ))}
       </div>
 
       {/* footer */}
-      <div className="border-t border-line pt-3 flex items-center justify-between">
+      <div
+        className="pt-3 flex items-center justify-between"
+        style={{ borderTop: "1px solid rgba(255, 255, 255, 0.14)" }}
+      >
         <div className="flex items-center gap-2 font-display font-bold text-[13px] tracking-[0.02em]">
           <span className="w-1.5 h-1.5 bg-accent flex-shrink-0" />
           TREINO CONCLUÍDO
         </div>
-        <span className="font-mono text-[9px] tracking-[0.1em] uppercase text-ink-faint">onmode</span>
+        <span className="font-mono text-[9px] tracking-[0.1em] uppercase" style={{ color: faint }}>
+          onmode
+        </span>
       </div>
     </div>
   );
