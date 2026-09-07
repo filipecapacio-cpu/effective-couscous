@@ -3,8 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BackArrowIcon, ClipboardIcon, DumbbellIcon, TargetIcon, TrendIcon } from "@/components/icons";
-
-type Goal = "performance" | "emagrecimento" | "massa" | "habito";
+import type { Goal } from "@/lib/plan";
 
 const options: { id: Goal; title: string; subtitle: string; Icon: typeof TargetIcon }[] = [
   { id: "performance", title: "Performance esportiva", subtitle: "Correr, nadar, jogar melhor", Icon: TargetIcon },
@@ -19,21 +18,10 @@ export default function OnboardingPage() {
 
   return (
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col">
-      <div className="px-6 pt-6 pb-2 flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <button onClick={() => router.back()} aria-label="Voltar" className="text-ink">
-            <BackArrowIcon size={22} />
-          </button>
-          <div className="text-[13px] text-ink-soft">2 de 5</div>
-        </div>
-        <div className="flex gap-1.5">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className={`h-1 flex-1 rounded-full ${i <= 1 ? "bg-ink" : "bg-line"}`}
-            />
-          ))}
-        </div>
+      <div className="px-6 pt-6 pb-2">
+        <button onClick={() => router.back()} aria-label="Voltar" className="text-ink">
+          <BackArrowIcon size={22} />
+        </button>
       </div>
 
       <div className="px-6 pt-7 pb-1">
