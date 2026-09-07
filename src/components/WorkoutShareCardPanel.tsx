@@ -30,13 +30,27 @@ export default function WorkoutShareCardPanel({
   const cardRef = useRef<HTMLDivElement>(null);
 
   async function renderPng(): Promise<string | null> {
-    if (!cardRef.current) return null;
+    const node = cardRef.current;
+    if (!node) return null;
     // espera as fontes carregarem de verdade antes de capturar, senão o
     // texto pode sair com a fonte de fallback no primeiro clique.
     if (typeof document !== "undefined" && document.fonts?.ready) {
       await document.fonts.ready;
     }
-    return toPng(cardRef.current, { pixelRatio: 3, cacheBust: true });
+
+    // O card tem fundo opaco (bg-paper) só pra ficar legível na prévia
+    // dentro do app. Pra exportar, tira o fundo por baixo dos panos (sem
+    // mexer no state - React não teria como garantir que o re-render
+    // aconteceu antes da captura) - assim o PNG final sai com
+    // transparência real, do jeito que o Instagram Stories espera de um
+    // sticker: o usuário põe a própria foto atrás, igual ao card do Strava.
+    const previousBackground = node.style.backgroundColor;
+    node.style.backgroundColor = "transparent";
+    try {
+      return await toPng(node, { pixelRatio: 3, cacheBust: true, backgroundColor: undefined });
+    } finally {
+      node.style.backgroundColor = previousBackground;
+    }
   }
 
   async function handleShare() {
