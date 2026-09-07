@@ -105,7 +105,7 @@ export async function startPlan(formData: FormData): Promise<StartPlanResult> {
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
 
-  await admin
+  const { error: profileUpdateError } = await admin
     .from("profiles")
     .update({
       plan_tier: tier,
@@ -121,6 +121,21 @@ export async function startPlan(formData: FormData): Promise<StartPlanResult> {
       coupon_discount_percent: coupon?.discount_percent ?? null,
     })
     .eq("id", user.id);
+
+  if (profileUpdateError) {
+    // A assinatura já existe no Asaas e vai cobrar de verdade depois do
+    // trial - sem essa checagem, um erro aqui (rede, DB) deixava o usuário
+    // com uma cobrança futura real mas sem plan_tier/asaas_subscription_id
+    // salvos, sem acesso pago e sem como cancelar (canManageSubscription
+    // depende desse campo). Desfaz no Asaas em vez de deixar isso pendurado.
+    console.error("[startPlan] failed to save profile after creating Asaas subscription:", profileUpdateError);
+    try {
+      await cancelAsaasSubscription(subscription.id);
+    } catch (cancelErr) {
+      console.error("[startPlan] failed to roll back Asaas subscription after profile save error:", cancelErr);
+    }
+    return { error: "Não deu pra concluir sua assinatura agora. Tenta de novo em instantes." };
+  }
 
   redirect("/dashboard");
 }
