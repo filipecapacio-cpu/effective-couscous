@@ -78,6 +78,15 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
+  // Pra onde mandar de volta depois de logar (ex: tentou abrir /assinatura
+  // deslogado, foi pro /entrar?proximo=/assinatura, loga e volta pra lá em
+  // vez de cair sempre no /dashboard). Só aceita caminho interno começando
+  // com uma única "/" - impede um valor tipo "//evil.com" ou uma URL
+  // completa adulterada no campo escondido do formulário virar redirect
+  // pra fora do app.
+  const proximoRaw = String(formData.get("proximo") ?? "");
+  const proximo = /^\/(?!\/)/.test(proximoRaw) ? proximoRaw : null;
+
   if (!email || !password) {
     return { error: "Preencha e-mail e senha." };
   }
@@ -95,10 +104,13 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
       .select("is_influencer")
       .eq("id", data.user.id)
       .maybeSingle();
+    // Influencer sempre cai no próprio painel, mesmo que tivesse tentado
+    // acessar outra coisa - ele não é assinante, não faz sentido mandar
+    // pro seletor de planos nem pro dashboard de treino.
     if (profile?.is_influencer) redirect("/parceiro");
   }
 
-  redirect("/dashboard");
+  redirect(proximo ?? "/dashboard");
 }
 
 export async function signOut() {

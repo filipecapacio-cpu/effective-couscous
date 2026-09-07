@@ -8,9 +8,10 @@ type Props = {
   action: (formData: FormData) => Promise<AuthResult>;
   mode: "entrar" | "cadastro";
   goal?: string | null;
+  proximo?: string | null;
 };
 
-export default function AuthForm({ action, mode, goal }: Props) {
+export default function AuthForm({ action, mode, goal, proximo }: Props) {
   const [state, formAction, pending] = useActionState<AuthResult, FormData>(
     (_prev, formData) => action(formData),
     null
@@ -28,6 +29,7 @@ export default function AuthForm({ action, mode, goal }: Props) {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       {goal && <input type="hidden" name="goal" value={goal} />}
+      {proximo && <input type="hidden" name="proximo" value={proximo} />}
 
       {mode === "cadastro" && (
         <label className="flex flex-col gap-1.5">

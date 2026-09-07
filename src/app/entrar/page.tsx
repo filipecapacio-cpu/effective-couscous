@@ -5,8 +5,14 @@ import { Logo } from "@/components/Logo";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { signIn } from "@/app/actions/auth";
 
-export default async function EntrarPage() {
+export default async function EntrarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ proximo?: string }>;
+}) {
   if (!isSupabaseConfigured()) return <SetupNotice />;
+
+  const { proximo } = await searchParams;
 
   return (
     <div className="mx-auto w-full max-w-md px-6 py-16 flex flex-col gap-8 min-h-svh">
@@ -19,7 +25,7 @@ export default async function EntrarPage() {
         <p className="text-ink-soft text-[15px]">Entre pra ver o seu ritmo de hoje.</p>
       </div>
 
-      <AuthForm action={signIn} mode="entrar" />
+      <AuthForm action={signIn} mode="entrar" proximo={proximo ?? null} />
 
       <Link href="/esqueci-senha" className="text-sm font-semibold text-ink -mt-2">
         Esqueceu a senha?
