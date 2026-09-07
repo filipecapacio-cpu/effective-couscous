@@ -2,7 +2,17 @@
 
 import { useActionState, useState } from "react";
 import { startPlan, stayOnFree, type StartPlanResult } from "@/app/actions/subscription";
-import { PLAN_FEATURES, PLAN_LABELS, TRIAL_DAYS, formatBRL, planPrice } from "@/lib/plans";
+import {
+  FREE_TAGLINE,
+  PLAN_FEATURES,
+  PLAN_LABELS,
+  PLAN_TAGLINES,
+  TRIAL_DAYS,
+  formatBRL,
+  planPrice,
+} from "@/lib/plans";
+
+const PLAN_EMOJI: Record<"pro" | "elite", string> = { pro: "⚡", elite: "👑" };
 
 export default function PlanPicker() {
   const [coupon, setCoupon] = useState("");
@@ -16,7 +26,7 @@ export default function PlanPicker() {
       <div className="flex flex-col gap-2">
         <h1 className="font-display font-bold uppercase tracking-[-0.02em] text-3xl">Escolha seu plano</h1>
         <p className="text-ink-soft text-[15px]">
-          {TRIAL_DAYS} dias grátis em qualquer plano. Cancele quando quiser antes do fim do trial.
+          {TRIAL_DAYS} dias grátis em qualquer plano pago. Cancele quando quiser antes do fim do trial.
         </p>
       </div>
 
@@ -38,14 +48,41 @@ export default function PlanPicker() {
       {state?.error && <div className="text-sm text-accent font-medium">{state.error}</div>}
 
       <div className="flex flex-col gap-4">
+        <div className="border border-line rounded-lg p-5 flex flex-col gap-4">
+          <div>
+            <h2 className="font-display font-bold uppercase tracking-[-0.02em] text-xl">Free</h2>
+            <p className="text-ink-soft text-sm mt-1">{FREE_TAGLINE}</p>
+            <p className="text-ink-soft text-sm mt-1">R$0</p>
+          </div>
+          <form action={stayOnFree}>
+            <button
+              type="submit"
+              className="w-full h-12 px-5 inline-flex items-center justify-center rounded border border-line font-semibold text-[15px] hover:border-ink transition-colors"
+            >
+              Continuar no Free
+            </button>
+          </form>
+        </div>
+
         {(["pro", "elite"] as const).map((tier) => (
-          <div key={tier} className="border border-line rounded-lg p-5 flex flex-col gap-4">
+          <div
+            key={tier}
+            className={`relative border rounded-lg p-5 flex flex-col gap-4 ${
+              tier === "pro" ? "border-ink" : "border-line"
+            }`}
+          >
+            {tier === "pro" && (
+              <span className="absolute -top-3 left-5 bg-ink text-paper text-[11px] font-mono uppercase tracking-[0.08em] px-2.5 py-1 rounded">
+                Mais popular
+              </span>
+            )}
             <div>
               <h2 className="font-display font-bold uppercase tracking-[-0.02em] text-xl">
-                {PLAN_LABELS[tier]}
+                {PLAN_LABELS[tier]} <span aria-hidden="true">{PLAN_EMOJI[tier]}</span>
               </h2>
+              <p className="text-ink-soft text-sm mt-1">{PLAN_TAGLINES[tier]}</p>
               <p className="text-ink-soft text-sm mt-1">
-                {formatBRL(planPrice(tier, "annual"))}/ano · ou {formatBRL(planPrice(tier, "monthly"))}/mês
+                {formatBRL(planPrice(tier, "monthly"))}/mês · ou {formatBRL(planPrice(tier, "annual"))}/ano
               </p>
             </div>
 
@@ -82,12 +119,6 @@ export default function PlanPicker() {
           </div>
         ))}
       </div>
-
-      <form action={stayOnFree}>
-        <button type="submit" className="w-full text-sm text-ink-soft underline underline-offset-2">
-          Continuar no Free (sem assistente de IA)
-        </button>
-      </form>
     </>
   );
 }

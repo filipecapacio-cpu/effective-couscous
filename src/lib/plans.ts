@@ -50,13 +50,20 @@ export function canManageSubscription(
 export const TRIAL_DAYS = 7;
 
 export const PLAN_PRICES: Record<PlanTier, Record<BillingCycle, number>> = {
-  pro: { monthly: 39.9, annual: 299 },
-  elite: { monthly: 59.9, annual: 449 },
+  pro: { monthly: 19.9, annual: 149.9 },
+  elite: { monthly: 34.9, annual: 249.9 },
 };
 
 export const PLAN_LABELS: Record<PlanTier, string> = {
   pro: "Pro",
   elite: "Elite",
+};
+
+export const FREE_TAGLINE = "Comece a entrar no modo.";
+
+export const PLAN_TAGLINES: Record<PlanTier, string> = {
+  pro: "Construa sua melhor versão.",
+  elite: "Performance sem piloto automático.",
 };
 
 export const PLAN_FEATURES: Record<PlanTier, string[]> = {
