@@ -1,0 +1,13 @@
+# tudo aqui é gerado por ./build.sh — só o pipeline é versionado
+fonts/
+onmode-fonts.css
+still/
+overlays/
+shots/
+clips/
+out/
+node_modules/
+package.json
+package-lock.json
+joined*.mp4
+list*.txt
