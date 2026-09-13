@@ -11,7 +11,7 @@ var ASHFORD_CONFIG = {
   whatsappMensagem: "Olá! Vim pelo site da Ashford e queria tirar uma dúvida.",
 
   instagram: "ashford_accessories",
-  email: "contato@ashford.com.br",
+  email: "clubashford@gmail.com",
 
   // ----------------------------------------------------------------------
   // Pagamento
