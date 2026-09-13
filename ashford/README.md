@@ -47,7 +47,7 @@ Tudo que muda com o tempo está em [`js/config.js`](./js/config.js):
 whatsapp: "5591992477891",   // país + DDD + número, só dígitos
 instagram: "ashford_accessories",
 email: "clubashford@gmail.com",
-pixChave: "contato@ashford.com.br",
+pixChave: "clubashford@gmail.com",
 pixDesconto: 0.05,           // 5% no Pix; use 0 pra não dar desconto
 cartaoLink: "",              // link de pagamento do gateway (ver abaixo)
 frete: 24.9,

@@ -18,7 +18,7 @@ var ASHFORD_CONFIG = {
   // ----------------------------------------------------------------------
   // Chave Pix da loja (copia e cola na tela de pagamento). Pode ser CNPJ,
   // e-mail, telefone ou chave aleatória.
-  pixChave: "contato@ashford.com.br",
+  pixChave: "clubashford@gmail.com",
   pixTitular: "Ashford Acessórios",
   // Desconto aplicado no Pix (0.05 = 5%). Use 0 pra não dar desconto.
   pixDesconto: 0.05,
