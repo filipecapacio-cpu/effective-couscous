@@ -68,6 +68,31 @@ de quebrar.
 4. Reinicie o servidor. Cada plano gerado ou mensagem no chat consome
    crédito da sua conta Anthropic (modelo usado: Claude Opus 5).
 
+## Leitor de Conversa (`/leitor-de-conversa`)
+
+Ferramenta aberta, sem login: a pessoa manda de 1 a 4 prints de uma conversa
+e a IA devolve uma leitura do tom — como está o clima, o que pode estar
+atrapalhando do lado de quem mandou o print, e 2 a 3 direções possíveis pra
+próxima mensagem. Por princípio **não** entrega frase pronta, técnica de
+persuasão nem conteúdo sexual: o prompt de sistema
+(`src/lib/leitor-conversa-ia.ts`) trata disso, e a instrução é ler sinais
+sociais, nunca afirmar certezas sobre o que a outra pessoa sente.
+
+Depende da mesma `ANTHROPIC_API_KEY` da seção anterior — sem ela a tela
+mostra um aviso em vez de quebrar. Como a rota é pública, tem algumas
+travas:
+
+- até 4 imagens por análise, 5 MB cada, só PNG/JPG/WEBP/GIF (conferido no
+  navegador e de novo no servidor);
+- os prints são reduzidos no navegador antes do upload, pro mesmo teto que a
+  API aplicaria sozinha — nada se perde e o upload fica menor;
+- 6 análises por hora por IP (`src/lib/rate-limit-anon.ts`). Essa contagem
+  vive na memória do processo: segura F5 nervoso, não abuso distribuído. Se
+  a ferramenta crescer, vale mover pra uma tabela ou Redis.
+
+Nenhuma imagem é gravada: os prints vão pra API, a análise volta e nada
+persiste no servidor.
+
 ## Conectando wearables (Garmin, opcional)
 
 Sem isso o app funciona normal — só a seção "Wearable" do Perfil (disponível
@@ -116,12 +141,14 @@ um campo unificado 100% confirmado na documentação da Terra.
 
 - `src/app/` — páginas (App Router): landing (`/`), `onboarding`,
   `cadastro`, `entrar`, `dashboard`, `plano`, `perfil`, `anamnese`,
-  `assistente`.
+  `assistente`, `leitor-de-conversa`.
 - `src/app/actions/` — Server Actions (auth, plano, perfil, IA).
 - `src/lib/supabase/` — clientes Supabase (browser, server, middleware) e
   o helper `isSupabaseConfigured()`.
-- `src/lib/anthropic.ts` — cliente da API da Anthropic e
-  `isAnthropicConfigured()`.
+- `src/lib/anthropic.ts` — cliente da API da Anthropic,
+  `isAnthropicConfigured()` e o fallback de modelo compartilhado.
+- `src/lib/leitor-conversa.ts` / `src/lib/leitor-conversa-ia.ts` —
+  limites e schema/prompt do Leitor de Conversa.
 - `src/lib/plan.ts` / `src/lib/data.ts` — conteúdo do plano inicial e
   cálculo de sequência/consistência.
 - `src/lib/ai-plan.ts` / `src/lib/anamnesis.ts` — schema do plano gerado

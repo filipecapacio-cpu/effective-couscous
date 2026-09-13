@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { describeAnthropicError, getAnthropicClient, isAnthropicConfigured } from "@/lib/anthropic";
+import {
+  describeAnthropicError,
+  getAnthropicClient,
+  isAnthropicConfigured,
+  withModelFallback,
+} from "@/lib/anthropic";
 import { WeekPlanSchema, type WeekPlan } from "@/lib/ai-plan";
 import { replaceTodayPlanWithAiPlan, replaceTodayMealsOnly } from "@/app/actions/plan";
 import { GOAL_LABEL, type Goal } from "@/lib/plan";
@@ -177,29 +182,6 @@ ${PLAN_JSON_FORMAT}`;
 function extractJsonText(raw: string): string {
   const fenced = raw.trim().match(/```(?:json)?\s*([\s\S]*?)```/i);
   return (fenced ? fenced[1] : raw).trim();
-}
-
-const PRIMARY_MODEL = "claude-opus-5";
-/**
- * Modelo de reserva - só entra em ação se o claude-opus-5 recusar a chamada
- * (ex: conta muito nova ainda sem acesso liberado ao modelo mais novo). Nunca
- * usado por custo/preferência, só pra não deixar a função de IA inteira fora
- * do ar por causa disso.
- */
-const FALLBACK_MODEL = "claude-sonnet-5";
-
-async function withModelFallback<T>(fn: (model: string) => Promise<T>): Promise<T> {
-  try {
-    return await fn(PRIMARY_MODEL);
-  } catch (err) {
-    if (err instanceof Anthropic.APIError && !(err instanceof Anthropic.RateLimitError)) {
-      console.error(
-        `[withModelFallback] ${PRIMARY_MODEL} failed (status ${err.status}): ${err.message} - retrying with ${FALLBACK_MODEL}`
-      );
-      return await fn(FALLBACK_MODEL);
-    }
-    throw err;
-  }
 }
 
 /**

@@ -39,3 +39,26 @@ export function describeAnthropicError(err: unknown): string {
   }
   return "Não consegui falar com a IA agora. Tenta de novo em instantes.";
 }
+
+export const PRIMARY_MODEL = "claude-opus-5";
+/**
+ * Modelo de reserva - só entra em ação se o claude-opus-5 recusar a chamada
+ * (ex: conta muito nova ainda sem acesso liberado ao modelo mais novo). Nunca
+ * usado por custo/preferência, só pra não deixar a função de IA inteira fora
+ * do ar por causa disso.
+ */
+export const FALLBACK_MODEL = "claude-sonnet-5";
+
+export async function withModelFallback<T>(fn: (model: string) => Promise<T>): Promise<T> {
+  try {
+    return await fn(PRIMARY_MODEL);
+  } catch (err) {
+    if (err instanceof Anthropic.APIError && !(err instanceof Anthropic.RateLimitError)) {
+      console.error(
+        `[withModelFallback] ${PRIMARY_MODEL} failed (status ${err.status}): ${err.message} - retrying with ${FALLBACK_MODEL}`
+      );
+      return await fn(FALLBACK_MODEL);
+    }
+    throw err;
+  }
+}
