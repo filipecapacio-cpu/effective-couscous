@@ -54,8 +54,8 @@ frete: 24.9,
 freteGratisAcima: 299,
 ```
 
-O número do WhatsApp vale pro botão flutuante, pros links de dúvida e pro
-envio do pedido — trocar em um lugar troca no site inteiro. O mesmo para
+O número do WhatsApp vale pros links de dúvida, pro rodapé e pro envio do
+pedido — trocar em um lugar troca no site inteiro. O mesmo para
 Instagram, e-mail, frete e desconto do Pix.
 
 ## Catálogo

@@ -711,6 +711,15 @@ p {
    Instagram
    ========================================================================== */
 
+/* O @ da marca é assinatura, não manchete: fica no corpo do texto, menor que
+   os outros títulos de seção. */
+.titulo-arroba {
+  font-size: clamp(19px, 2.6vw, 24px);
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  overflow-wrap: anywhere;
+}
+
 .insta-grade {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1486,41 +1495,8 @@ legend {
 }
 
 /* ==========================================================================
-   WhatsApp flutuante e aviso de "adicionado"
+   Aviso de "adicionado à sacola"
    ========================================================================== */
-
-.zap-flutuante {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 50;
-  width: 54px;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--marinho);
-  color: var(--creme);
-  border-radius: 50%;
-  box-shadow: 0 10px 26px rgba(28, 43, 58, 0.28);
-  transition: background 0.2s ease;
-}
-
-.zap-flutuante:hover {
-  background: var(--ouro);
-}
-
-.zap-flutuante svg {
-  width: 26px;
-  height: 26px;
-}
-
-@media (min-width: 900px) {
-  .zap-flutuante {
-    right: 26px;
-    bottom: 26px;
-  }
-}
 
 .aviso {
   position: fixed;
