@@ -409,3 +409,12 @@ export function MoreIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps)
     </svg>
   );
 }
+
+export function TikTokIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M14.2 3v10.8a3.6 3.6 0 1 1-3.6-3.6" strokeLinejoin="round" />
+      <path d="M14.2 3c.5 2.4 2.1 3.9 4.6 4.1" strokeLinejoin="round" />
+    </svg>
+  );
+}

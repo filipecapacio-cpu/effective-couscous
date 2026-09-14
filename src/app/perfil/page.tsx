@@ -49,7 +49,7 @@ export default async function PerfilPage() {
     // maybeSingle: quem nunca abriu o Social não tem essa linha ainda.
     supabase
       .from("social_profiles")
-      .select("id, handle, display_name, bio")
+      .select("id, handle, display_name, bio, instagram_handle, tiktok_handle")
       .eq("id", user.id)
       .maybeSingle(),
     getWeekSummary(supabase, user.id),
@@ -195,6 +195,8 @@ export default async function PerfilPage() {
               : null
           }
           bio={(socialProfile?.bio as string | null) ?? null}
+          instagram={(socialProfile?.instagram_handle as string | null) ?? null}
+          tiktok={(socialProfile?.tiktok_handle as string | null) ?? null}
         />
 
         {isAnthropicConfigured() && (

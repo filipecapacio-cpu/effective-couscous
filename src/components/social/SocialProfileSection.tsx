@@ -1,12 +1,55 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronRightIcon, PeopleIcon, PencilIcon, XIcon } from "@/components/icons";
+import {
+  ChevronRightIcon,
+  InstagramIcon,
+  PeopleIcon,
+  PencilIcon,
+  TikTokIcon,
+  XIcon,
+} from "@/components/icons";
 import { updateSocialProfile } from "@/app/actions/social";
 import { MAX_BIO_LENGTH, type SocialAuthor } from "@/lib/social";
 
 type Result = { error: string } | { ok: true } | null;
+
+/**
+ * Uma linha de rede social no card do Perfil. Mostra o @ já preenchido ou o
+ * convite pra adicionar — nos dois casos leva pro mesmo modal de edição.
+ */
+function NetworkRow({
+  icon,
+  label,
+  value,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string | null;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={value ? `Editar ${label}: @${value}` : `Adicionar seu @ do ${label}`}
+      className="w-full flex items-center gap-3 p-4 border-t border-white/10 text-left"
+    >
+      {icon}
+      <span className="text-[14px] flex-shrink-0">{label}</span>
+      <span
+        className={`flex-1 text-right text-[13px] truncate ${
+          value ? "text-on-ink-soft" : "text-accent"
+        }`}
+      >
+        {value ? `@${value}` : "Adicionar"}
+      </span>
+      <ChevronRightIcon size={15} className="text-on-ink-faint flex-shrink-0" />
+    </button>
+  );
+}
 
 /**
  * Bloco do perfil público dentro da tela de Perfil.
@@ -22,12 +65,25 @@ type Result = { error: string } | { ok: true } | null;
 export default function SocialProfileSection({
   profile,
   bio,
+  instagram,
+  tiktok,
 }: {
   /** null enquanto a pessoa não escolheu um @. */
   profile: SocialAuthor | null;
   bio: string | null;
+  instagram: string | null;
+  tiktok: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  // Qual campo recebe o foco ao abrir o modal. Clicar na linha do
+  // Instagram e cair com o cursor no campo Nome seria frustrante.
+  const [focusField, setFocusField] = useState<"instagram" | "tiktok" | null>(null);
+
+  function openModal(field: "instagram" | "tiktok" | null = null) {
+    setFocusField(field);
+    setOpen(true);
+  }
+
   const [state, formAction, pending] = useActionState<Result, FormData>(async (_prev, formData) => {
     const result = await updateSocialProfile(formData);
     if ("ok" in result) setOpen(false);
@@ -73,9 +129,27 @@ export default function SocialProfileSection({
           <ChevronRightIcon size={16} className="text-on-ink-faint flex-shrink-0" />
         </Link>
 
+        {/*
+          As redes ficam visíveis aqui fora, e não só dentro do modal: o
+          ícone é o que sinaliza que dá pra adicionar. Enterrado atrás de
+          "Editar @, nome e bio", ninguém descobria que isso existia.
+        */}
+        <NetworkRow
+          icon={<InstagramIcon size={17} className="text-on-ink-soft flex-shrink-0" />}
+          label="Instagram"
+          value={instagram}
+          onClick={() => openModal("instagram")}
+        />
+        <NetworkRow
+          icon={<TikTokIcon size={17} className="text-on-ink-soft flex-shrink-0" />}
+          label="TikTok"
+          value={tiktok}
+          onClick={() => openModal("tiktok")}
+        />
+
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => openModal()}
           className="w-full flex items-center gap-3 p-4 border-t border-white/10 text-left"
         >
           <PencilIcon size={16} className="text-on-ink-soft flex-shrink-0" />
@@ -137,6 +211,49 @@ export default function SocialProfileSection({
                 className="rounded bg-white/5 px-3.5 py-2.5 text-[15px] text-on-ink outline-none border border-white/10 focus:border-white/30 resize-none"
               />
             </label>
+
+            {/*
+              Só o @, nunca a URL — a URL é montada na hora de renderizar o
+              link no perfil público. Colar o endereço inteiro funciona
+              mesmo assim: a action normaliza antes de validar.
+            */}
+            <div className="flex flex-col gap-3">
+              <span className="text-sm text-on-ink-soft">Suas redes (opcional)</span>
+
+              <label className="flex items-center gap-2.5 h-11 rounded bg-white/5 px-3.5 border border-white/10 focus-within:border-white/30">
+                <InstagramIcon size={17} className="text-on-ink-faint flex-shrink-0" />
+                <span className="text-on-ink-faint text-[15px]">@</span>
+                <input
+                  name="instagram"
+                  autoFocus={focusField === "instagram"}
+                  defaultValue={instagram ?? ""}
+                  maxLength={60}
+                  placeholder="seu.perfil"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-label="@ do Instagram"
+                  className="flex-1 min-w-0 bg-transparent text-[15px] text-on-ink outline-none placeholder:text-on-ink-faint"
+                />
+              </label>
+
+              <label className="flex items-center gap-2.5 h-11 rounded bg-white/5 px-3.5 border border-white/10 focus-within:border-white/30">
+                <TikTokIcon size={17} className="text-on-ink-faint flex-shrink-0" />
+                <span className="text-on-ink-faint text-[15px]">@</span>
+                <input
+                  name="tiktok"
+                  autoFocus={focusField === "tiktok"}
+                  defaultValue={tiktok ?? ""}
+                  maxLength={60}
+                  placeholder="seu.perfil"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-label="@ do TikTok"
+                  className="flex-1 min-w-0 bg-transparent text-[15px] text-on-ink outline-none placeholder:text-on-ink-faint"
+                />
+              </label>
+            </div>
 
             {state && "error" in state && (
               <div className="text-sm text-accent font-medium">{state.error}</div>
