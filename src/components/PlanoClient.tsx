@@ -26,6 +26,7 @@ import {
 import { Logo } from "@/components/Logo";
 import ShareSummaryButton from "@/components/ShareSummaryButton";
 import WorkoutShareCardPanel from "@/components/WorkoutShareCardPanel";
+import PublishWorkoutButton from "@/components/social/PublishWorkoutButton";
 
 type Exercise = { id: string; name: string; detail: string | null; done: boolean };
 type Meal = { id: string; name: string; detail: string | null; kcal: number | null; done: boolean };
@@ -38,6 +39,9 @@ type Props = {
   exercises: Exercise[];
   meals: Meal[];
   initialWorkoutLog: WorkoutLog | null;
+  workoutLogId: string | null;
+  /** Id do post, quando o treino de hoje já virou publicação no feed. */
+  publishedPostId: string | null;
   aiPlanSummary: string | null;
   aiPlanGeneratedAt: string | null;
   hasShareCardAccess: boolean;
@@ -53,6 +57,8 @@ export default function PlanoClient({
   exercises,
   meals,
   initialWorkoutLog,
+  workoutLogId,
+  publishedPostId,
   aiPlanSummary,
   aiPlanGeneratedAt,
   hasShareCardAccess,
@@ -111,7 +117,13 @@ export default function PlanoClient({
       <main className="flex-1 px-6 py-5">
         {tab === "treino" ? (
           <div className="flex flex-col gap-3">
-            <WorkoutLogForm userId={userId} initial={initialWorkoutLog} hasShareCardAccess={hasShareCardAccess} />
+            <WorkoutLogForm
+              userId={userId}
+              initial={initialWorkoutLog}
+              hasShareCardAccess={hasShareCardAccess}
+              workoutLogId={workoutLogId}
+              publishedPostId={publishedPostId}
+            />
 
             <div className="flex items-center justify-between mb-0.5 mt-1">
               <span className="text-sm text-ink-soft">{workoutTitle}</span>
@@ -403,10 +415,14 @@ function WorkoutLogForm({
   userId,
   initial,
   hasShareCardAccess,
+  workoutLogId,
+  publishedPostId,
 }: {
   userId: string;
   initial: WorkoutLog | null;
   hasShareCardAccess: boolean;
+  workoutLogId: string | null;
+  publishedPostId: string | null;
 }) {
   const [modality, setModality] = useState<WorkoutModality>(initial?.modality ?? "Musculação");
   const [intensityLabel, setIntensityLabel] = useState<IntensityLabel | null>(
@@ -419,10 +435,18 @@ function WorkoutLogForm({
   const [done, setDone] = useState(Boolean(initial));
   const isRest = modality === "Descanso";
 
+  // Começa com o id que veio do servidor (quando o treino de hoje já estava
+  // registrado ao abrir a tela) e é atualizado quando a pessoa salva agora —
+  // é o que permite abrir a publicação desse treino sem recarregar a página.
+  const [savedLogId, setSavedLogId] = useState(workoutLogId);
+
   const [state, formAction, pending] = useActionState<WorkoutLogResult | null, FormData>(
     async (_prev, formData) => {
       const result = await saveWorkoutLog(formData);
-      if (result && "ok" in result) setDone(true);
+      if (result && "ok" in result) {
+        setSavedLogId(result.id);
+        setDone(true);
+      }
       return result;
     },
     null
@@ -448,6 +472,14 @@ function WorkoutLogForm({
         </div>
 
         <div className="w-full flex flex-col gap-4 mt-2">
+          {/*
+            Publicar no feed não é gated por plano — diferente do card estilo
+            Strava logo abaixo, que é Pro. Dia de descanso não vira post.
+          */}
+          {!isRest && (
+            <PublishWorkoutButton workoutLogId={savedLogId} publishedPostId={publishedPostId} />
+          )}
+
           {!isRest && hasShareCardAccess ? (
             <WorkoutShareCardPanel
               modality={modality as Exclude<WorkoutModality, "Descanso">}

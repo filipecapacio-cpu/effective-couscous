@@ -10,8 +10,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/social";
 import { getPublishableWorkouts } from "@/app/actions/social";
 
-export default async function NovoPostPage() {
+export default async function NovoPostPage(props: PageProps<"/social/novo">) {
   if (!isSupabaseConfigured()) return <SetupNotice />;
+
+  // `?treino=<id>` vem do atalho da tela de Plano. É só uma pré-seleção na
+  // lista — quem manda na posse do treino é a action, não este parâmetro.
+  const { treino } = await props.searchParams;
+  const preselectedId = typeof treino === "string" ? treino : null;
 
   const supabase = await createClient();
   const {
@@ -38,7 +43,7 @@ export default async function NovoPostPage() {
       </header>
 
       <main className="flex-1 px-4 pb-10">
-        <CreatePostForm workouts={workouts} />
+        <CreatePostForm workouts={workouts} preselectedId={preselectedId} />
       </main>
     </div>
   );

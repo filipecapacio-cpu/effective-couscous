@@ -23,4 +23,9 @@ export type WorkoutLog = {
   durationMin: number | null;
 };
 
-export type WorkoutLogResult = { error: string } | { ok: true };
+/**
+ * O `id` do registro salvo volta junto pra que a tela de Plano consiga
+ * mandar a pessoa direto pra publicação desse treino no feed, sem precisar
+ * buscar de novo qual linha acabou de ser gravada.
+ */
+export type WorkoutLogResult = { error: string } | { ok: true; id: string };
