@@ -5,13 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import {
   FEED_PAGE_SIZE,
   HANDLE_PATTERN,
+  INSTAGRAM_PATTERN,
   MAX_BIO_LENGTH,
   MAX_CAPTION_LENGTH,
   MAX_COMMENT_LENGTH,
   MAX_POST_MEDIA,
   POST_MEDIA_BUCKET,
+  TIKTOK_PATTERN,
   getAuthorPage,
   getFeedPage,
+  normalizeSocialHandle,
   type FeedCursor,
   type FeedPage,
 } from "@/lib/social";
@@ -103,12 +106,26 @@ export async function updateSocialProfile(formData: FormData): Promise<SocialRes
     return { error: `A bio passa de ${MAX_BIO_LENGTH} caracteres.` };
   }
 
+  // Normaliza antes de validar: quem cola a URL inteira do perfil não
+  // deveria levar erro por isso.
+  const instagram = normalizeSocialHandle(String(formData.get("instagram") ?? ""));
+  const tiktok = normalizeSocialHandle(String(formData.get("tiktok") ?? ""));
+
+  if (instagram && !INSTAGRAM_PATTERN.test(instagram)) {
+    return { error: "@ do Instagram inválido. Use até 30 caracteres, sem espaço." };
+  }
+  if (tiktok && !TIKTOK_PATTERN.test(tiktok)) {
+    return { error: "@ do TikTok inválido. Use até 24 caracteres, sem espaço." };
+  }
+
   const { error } = await supabase
     .from("social_profiles")
     .update({
       handle,
       display_name: displayName,
       bio: bio || null,
+      instagram_handle: instagram || null,
+      tiktok_handle: tiktok || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);

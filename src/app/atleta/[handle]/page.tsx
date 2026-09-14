@@ -6,7 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import SetupNotice from "@/components/SetupNotice";
 import Avatar from "@/components/social/Avatar";
 import FeedList from "@/components/social/FeedList";
-import { BackArrowIcon } from "@/components/icons";
+import { BackArrowIcon, InstagramIcon, TikTokIcon } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorByHandle, getAuthorPage, getAuthorStats, getViewer } from "@/lib/social";
@@ -65,6 +65,40 @@ export default async function AtletaPage(props: PageProps<"/atleta/[handle]">) {
           </div>
 
           {author.bio && <p className="text-[13px] text-ink-soft leading-relaxed">{author.bio}</p>}
+
+          {/*
+            A URL é montada aqui a partir do @ guardado no banco — o banco
+            nunca guarda link. `encodeURIComponent` é cinto e suspensório em
+            cima do CHECK da migration 0024, que já só aceita
+            letras/números/ponto/underscore.
+            rel="noopener noreferrer" porque são links pra fora do app.
+          */}
+          {(author.instagram_handle || author.tiktok_handle) && (
+            <div className="flex flex-wrap gap-2">
+              {author.instagram_handle && (
+                <a
+                  href={`https://instagram.com/${encodeURIComponent(author.instagram_handle)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 h-9 px-3 rounded-lg bg-card-2 text-[13px] text-ink-soft active:opacity-80"
+                >
+                  <InstagramIcon size={16} className="flex-shrink-0" />
+                  <span className="truncate max-w-[130px]">@{author.instagram_handle}</span>
+                </a>
+              )}
+              {author.tiktok_handle && (
+                <a
+                  href={`https://tiktok.com/@${encodeURIComponent(author.tiktok_handle)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 h-9 px-3 rounded-lg bg-card-2 text-[13px] text-ink-soft active:opacity-80"
+                >
+                  <TikTokIcon size={16} className="flex-shrink-0" />
+                  <span className="truncate max-w-[130px]">@{author.tiktok_handle}</span>
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-2">
             {statTiles.map((tile) => (

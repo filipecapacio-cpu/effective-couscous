@@ -23,6 +23,39 @@ export const SIGNED_URL_TTL_SECONDS = 3600;
 
 export const HANDLE_PATTERN = /^[a-z0-9_]{3,20}$/;
 
+/**
+ * @ de Instagram e TikTok. Os mesmos CHECKs estão na migration 0024 — aqui
+ * é só pra dar uma mensagem de erro decente antes de bater no banco.
+ *
+ * Guardamos só o @, nunca a URL: a URL é montada na hora de renderizar. É o
+ * que impede colar um "javascript:..." num campo que vira link clicável no
+ * perfil público.
+ */
+export const INSTAGRAM_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
+export const TIKTOK_PATTERN = /^[A-Za-z0-9._]{1,24}$/;
+
+/**
+ * Aceita o que a pessoa colar: "@fulano", "instagram.com/fulano",
+ * "https://www.tiktok.com/@fulano" ou só "fulano" — e devolve sempre o @
+ * limpo. Colar a URL inteira é o erro mais provável de todos, e recusar
+ * isso com erro de validação seria hostil à toa.
+ */
+export function normalizeSocialHandle(raw: string): string {
+  const trimmed = raw.trim();
+
+  // Endereço do Instagram/TikTok: extrai o @ de dentro dele, descartando
+  // barra final, query (?igsh=...) e fragmento.
+  const withoutScheme = trimmed.replace(/^https?:\/\//i, "").replace(/^www\./i, "");
+  const known = withoutScheme.match(/^(?:instagram\.com|tiktok\.com)\/@?([^/?#]+)/i);
+  if (known) return known[1].trim();
+
+  // Qualquer outra coisa é tratada como o @ digitado direto — e nenhum
+  // pedaço é descartado. É o que faz "outrodominio.com/fulano" continuar
+  // inteiro e ser RECUSADO pela validação, em vez de virar silenciosamente
+  // o handle "outrodominio.com".
+  return trimmed.replace(/^@/, "").trim();
+}
+
 export type SocialAuthor = {
   id: string;
   handle: string;
@@ -383,7 +416,12 @@ export async function getViewer(supabase: Supabase, userId: string): Promise<Soc
   return (data as SocialAuthor | null) ?? null;
 }
 
-export type PublicAuthor = SocialAuthor & { bio: string | null; created_at: string };
+export type PublicAuthor = SocialAuthor & {
+  bio: string | null;
+  instagram_handle: string | null;
+  tiktok_handle: string | null;
+  created_at: string;
+};
 
 export async function getAuthorByHandle(
   supabase: Supabase,
@@ -391,7 +429,7 @@ export async function getAuthorByHandle(
 ): Promise<PublicAuthor | null> {
   const { data, error } = await supabase
     .from("social_profiles")
-    .select("id, handle, display_name, bio, created_at")
+    .select("id, handle, display_name, bio, instagram_handle, tiktok_handle, created_at")
     .eq("handle", handle.toLowerCase())
     .maybeSingle();
 
