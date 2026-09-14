@@ -376,3 +376,36 @@ export function YogaIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps)
     </svg>
   );
 }
+
+export function HeartIcon({ size = 24, className, strokeWidth = 1.8, filled = false }: IconProps & { filled?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base} fill={filled ? "currentColor" : "none"}>
+      <path d="M12 20.5 4.2 13a4.8 4.8 0 0 1 6.8-6.8l1 1 1-1A4.8 4.8 0 0 1 19.8 13Z" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function CommentIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M4 4h16v12H9l-5 4Z" />
+    </svg>
+  );
+}
+
+export function CameraIcon({ size = 24, className, strokeWidth = 1.6 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M3 7h4l1.5-2h7L17 7h4v13H3Z" />
+      <circle cx="12" cy="13" r="3.6" />
+    </svg>
+  );
+}
+
+export function MoreIcon({ size = 24, className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} stroke="currentColor" strokeWidth={strokeWidth} {...base}>
+      <path d="M6 12h.01M12 12h.01M18 12h.01" strokeLinecap="round" />
+    </svg>
+  );
+}

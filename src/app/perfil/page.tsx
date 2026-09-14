@@ -9,6 +9,7 @@ import ProfileEditForm from "@/components/ProfileEditForm";
 import SubscriptionManageModal from "@/components/SubscriptionManageModal";
 import GarminConnectButton from "@/components/GarminConnectButton";
 import Heatmap from "@/components/Heatmap";
+import SocialProfileSection from "@/components/social/SocialProfileSection";
 import { ReadinessBars } from "@/components/ReadinessBars";
 import { Logo } from "@/components/Logo";
 import { SparkleIcon } from "@/components/icons";
@@ -37,7 +38,7 @@ export default async function PerfilPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
-  const [{ data: profile }, summary, heatmap] = await Promise.all([
+  const [{ data: profile }, { data: socialProfile }, summary, heatmap] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -45,6 +46,12 @@ export default async function PerfilPage() {
       )
       .eq("id", user.id)
       .single(),
+    // maybeSingle: quem nunca abriu o Social não tem essa linha ainda.
+    supabase
+      .from("social_profiles")
+      .select("id, handle, display_name, bio")
+      .eq("id", user.id)
+      .maybeSingle(),
     getWeekSummary(supabase, user.id),
     getMonthHeatmap(supabase, user.id),
   ]);
@@ -176,6 +183,19 @@ export default async function PerfilPage() {
             </Link>
           )}
         </div>
+
+        <SocialProfileSection
+          profile={
+            socialProfile
+              ? {
+                  id: socialProfile.id as string,
+                  handle: socialProfile.handle as string,
+                  display_name: socialProfile.display_name as string,
+                }
+              : null
+          }
+          bio={(socialProfile?.bio as string | null) ?? null}
+        />
 
         {isAnthropicConfigured() && (
           <div className="px-5 pt-6">
