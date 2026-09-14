@@ -36,11 +36,25 @@ type UploadedPhoto = {
  * o abandono total ainda depende de uma limpeza periódica, que não existe
  * na v1 — está anotado no README.
  */
-export default function CreatePostForm({ workouts }: { workouts: PublishableWorkout[] }) {
+export default function CreatePostForm({
+  workouts,
+  /** Vem do atalho da tela de Plano (`?treino=`). */
+  preselectedId = null,
+}: {
+  workouts: PublishableWorkout[];
+  preselectedId?: string | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
 
-  const [selectedId, setSelectedId] = useState<string | null>(workouts[0]?.id ?? null);
+  // Só aceita a pré-seleção se o treino realmente está na lista — que já vem
+  // filtrada pelo servidor com os treinos do próprio usuário ainda não
+  // publicados. Um id inventado na URL simplesmente cai no padrão.
+  const [selectedId, setSelectedId] = useState<string | null>(
+    (preselectedId && workouts.some((w) => w.id === preselectedId) ? preselectedId : null) ??
+      workouts[0]?.id ??
+      null
+  );
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);

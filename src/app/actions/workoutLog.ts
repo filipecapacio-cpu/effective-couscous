@@ -33,18 +33,24 @@ export async function saveWorkoutLog(formData: FormData): Promise<WorkoutLogResu
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("workout_logs").upsert(
-    {
-      user_id: userId,
-      date: todayISO(),
-      modality,
-      intensity_label: intensityLabel,
-      intensity_score: intensityScore,
-      duration_min: durationMin,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,date" }
-  );
+  const { data, error } = await supabase
+    .from("workout_logs")
+    .upsert(
+      {
+        user_id: userId,
+        date: todayISO(),
+        modality,
+        intensity_label: intensityLabel,
+        intensity_score: intensityScore,
+        duration_min: durationMin,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,date" }
+    )
+    // Devolve a linha gravada pra quem chamou saber o id dela — é o que
+    // permite abrir a publicação desse treino direto da tela de Plano.
+    .select("id")
+    .single();
 
   if (error) {
     console.error("[saveWorkoutLog] failed:", error);
@@ -52,5 +58,5 @@ export async function saveWorkoutLog(formData: FormData): Promise<WorkoutLogResu
   }
 
   revalidatePath("/plano");
-  return { ok: true };
+  return { ok: true, id: data.id as string };
 }

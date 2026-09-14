@@ -49,7 +49,7 @@ export default async function PlanoPage() {
       .order("position"),
     supabase
       .from("workout_logs")
-      .select("modality, intensity_label, intensity_score, duration_min")
+      .select("id, modality, intensity_label, intensity_score, duration_min")
       .eq("user_id", user.id)
       .eq("date", date)
       .maybeSingle(),
@@ -63,6 +63,13 @@ export default async function PlanoPage() {
         .eq("workout_id", workout.id)
         .order("position")
     : { data: [] };
+
+  // Um treino vira no máximo um post (UNIQUE em posts.workout_log_id), então
+  // isto decide entre oferecer "Publicar no feed" e mostrar o link da
+  // publicação que já existe.
+  const { data: existingPost } = workoutLog
+    ? await supabase.from("posts").select("id").eq("workout_log_id", workoutLog.id).maybeSingle()
+    : { data: null };
 
   return (
     <div className="mx-auto w-full max-w-[420px] min-h-svh flex flex-col">
@@ -83,6 +90,8 @@ export default async function PlanoPage() {
               }
             : null
         }
+        workoutLogId={workoutLog?.id ?? null}
+        publishedPostId={(existingPost?.id as string | undefined) ?? null}
         aiPlanSummary={(aiPlan?.plan as { summary?: string } | null)?.summary ?? null}
         aiPlanGeneratedAt={aiPlan?.generated_at ?? null}
         hasShareCardAccess={hasShareCardAccess}
