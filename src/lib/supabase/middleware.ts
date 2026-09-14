@@ -2,7 +2,21 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
 
-const PROTECTED_PATHS = ["/dashboard", "/plano", "/perfil", "/anamnese", "/assistente", "/agenda"];
+// O social entra aqui como qualquer outra tela do app: exige login e passa
+// pelo mesmo portão de escolha de plano. Não há checagem de plan_tier
+// nenhuma — Free, Pro, Elite e founders veem e publicam igual. Rede social
+// só funciona com gente dentro, e travar o feed num plano pago esvaziaria
+// ele antes de começar.
+const PROTECTED_PATHS = [
+  "/dashboard",
+  "/plano",
+  "/perfil",
+  "/anamnese",
+  "/assistente",
+  "/agenda",
+  "/social",
+  "/atleta",
+];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

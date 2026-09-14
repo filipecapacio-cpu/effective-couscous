@@ -112,12 +112,61 @@ de confiar cegamente no mapeamento de campos em `src/app/api/webhooks/terra/rout
 — em especial "body battery", que é um recurso proprietário da Garmin sem
 um campo unificado 100% confirmado na documentação da Terra.
 
+## Feed social
+
+Área social dentro do app (`/social`): cada publicação é obrigatoriamente um
+treino que a pessoa já registrou em `workout_logs`, com pelo menos uma foto
+anexada. Feed aberto a qualquer usuário logado — não existe "seguir" na v1,
+e não há nenhuma checagem de plano: Free, Pro e Elite publicam igual.
+
+1. Rode, no SQL Editor do Supabase e nessa ordem:
+   [`0022_social_feed.sql`](./supabase/migrations/0022_social_feed.sql)
+   (tabelas, RLS e a função `create_post_with_media`) e depois
+   [`0023_social_storage.sql`](./supabase/migrations/0023_social_storage.sql)
+   (bucket `post-media` e as policies de Storage).
+2. Confira em **Storage** que o bucket `post-media` apareceu e está
+   **privado**. Se os `CREATE POLICY` da 0023 tiverem falhado por permissão
+   em `storage.objects` (acontece em alguns projetos), crie as três regras
+   pela interface em Storage → Policies — a lógica de cada uma está
+   comentada no arquivo.
+3. Nenhuma variável de ambiente nova é necessária.
+
+Pontos que valem saber ao mexer nisso:
+
+- **As métricas do post vêm por join, não por cópia.** O post guarda só a
+  legenda e a referência ao treino; modalidade, duração e intensidade são
+  lidas de `workout_logs` na hora de montar o feed. A consequência é que
+  editar o registro daquele dia muda o post já publicado (mesmo
+  comportamento do Strava). Lembre que `workout_logs` tem
+  `unique (user_id, date)` e é sobrescrito por upsert.
+- **Privacidade do histórico.** A policy `workout_logs: select if published`
+  libera pra leitura só as linhas que têm um post apontando pra elas. O
+  resto do histórico de treino continua privado, inclusive nas estatísticas
+  do perfil público.
+- **`public.profiles` não é legível por outros usuários** e não deve virar —
+  ela guarda `cpf_cnpj` e os IDs da Asaas. O que é público mora em
+  `social_profiles` (handle, nome, bio).
+- **Imagens.** São comprimidas no navegador (`src/lib/image.ts`) pra WebP de
+  no máximo 1440px antes de subir, e servidas por URL assinada de 1h. Não
+  passam pelo `next/image` de propósito — o otimizador trataria cada
+  assinatura como uma imagem nova.
+
+O que ainda não existe (consciente, não esquecido): moderação e denúncia de
+conteúdo, sistema de seguir (a tabela `follows` já está criada mas nenhuma
+tela usa), notificações, foto de perfil, edição de post e uma rotina de
+limpeza pros arquivos de upload abandonado no meio da criação de um post.
+
 ## Estrutura
 
 - `src/app/` — páginas (App Router): landing (`/`), `onboarding`,
   `cadastro`, `entrar`, `dashboard`, `plano`, `perfil`, `anamnese`,
-  `assistente`.
-- `src/app/actions/` — Server Actions (auth, plano, perfil, IA).
+  `assistente`, `social` (feed, `/social/novo`, `/social/post/[id]`) e
+  `atleta/[handle]` (perfil público).
+- `src/app/actions/` — Server Actions (auth, plano, perfil, IA, social).
+- `src/components/social/` — feed, card de post, criação de publicação e
+  perfil público.
+- `src/lib/social.ts` — tipos, paginação por keyset e queries do feed.
+- `src/lib/image.ts` — compressão de imagem no navegador antes do upload.
 - `src/lib/supabase/` — clientes Supabase (browser, server, middleware) e
   o helper `isSupabaseConfigured()`.
 - `src/lib/anthropic.ts` — cliente da API da Anthropic e
